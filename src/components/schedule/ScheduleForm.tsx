@@ -15,15 +15,20 @@ interface ScheduleFormProps {
     scheduleType: ScheduleType;
 }
 
+/**
+ * Form tạo/cập nhật lịch làm việc.
+ * - Hỗ trợ 3 loại lịch: Cố định (Regular), Linh hoạt (Flexible), Nghỉ (TimeOff).
+ * - Tự động ẩn/hiện các trường dữ liệu tùy theo loại lịch.
+ */
 export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }: ScheduleFormProps) {
 
-
-    // Helper to truncate time to HH:mm format (remove seconds if present)
+    // Helper: Cắt chuỗi thời gian HH:mm:ss thành HH:mm cho input type="time"
     const formatTime = (time?: string | null) => {
         if (!time) return '09:00';
         return time.slice(0, 5); // Take only HH:mm
     };
 
+    // Khởi tạo state cho form data
     const [formData, setFormData] = useState<CreateScheduleDto>({
         dayOfWeek: schedule?.dayOfWeek ?? 1,
         startTime: formatTime(schedule?.startTime),
@@ -42,12 +47,12 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
         discountPercent: schedule?.discountPercent ?? 0,
     });
 
-    // Local state for Minimum Booking Time in Days
+    // Local state cho Minimum Booking Time (được tính bằng Ngày)
     const [minBookingDays, setMinBookingDays] = useState<number | undefined>(
         schedule?.minimumBookingDays ?? (Math.floor(((schedule as any)?.minimumBookingTime || 0) / (24 * 60)) || 1)
     );
 
-    // Sync formData when schedule changes
+    // Effect: Sync formData khi props schedule thay đổi (chế độ Edit)
     useEffect(() => {
         if (open) {
             setFormData({
@@ -71,6 +76,7 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
         }
     }, [open, schedule]);
 
+    // Handler: Cập nhật giá trị field
     const handleChange = (field: keyof CreateScheduleDto, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
@@ -101,8 +107,9 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
 
-                    {/* --- Common Fields: Date/Time --- */}
+                    {/* --- Nhóm: Thời gian & Ngày --- */}
                     <div className="grid grid-cols-2 gap-4">
+                        {/* REGULAR: Chọn Thứ trong tuần */}
                         {isRegular && (
                             <div className="space-y-2">
                                 <Label htmlFor="dayOfWeek">Ngày trong tuần</Label>
@@ -124,17 +131,7 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                             </div>
                         )}
 
-                        {/* Flexible: Specific Date (mapped to effectiveFrom for simplicity in form, processed later if needed) 
-                             *EDIT*: The User Request shows a "Ngày khám" field for Flexible. 
-                             Backend usually treats Flexible with `specificDate`. 
-                             However, `CreateScheduleDto` uses `effectiveFrom`. 
-                             Let's assume `effectiveFrom` holds the specific date for Flexible in this form for now, 
-                             or we add `specificDate` to mapping. 
-                             Based on previous types, `CreateFlexibleScheduleDto` has `specificDate`.
-                             I will use `effectiveFrom` as the input for it, as `specificDate` is not in `CreateScheduleDto`.
-                             The submit handler in parent might need adjustment or we adjust here.
-                             For now, let's use `effectiveFrom` as the date picker.
-                        */}
+                        {/* FLEXIBLE / TIMEOFF: Chọn Ngày cụ thể */}
                         {(isFlexible || isTimeOff) && (
                             <div className="space-y-2">
                                 <Label htmlFor="effectiveFrom">
@@ -150,6 +147,7 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                             </div>
                         )}
 
+                        {/* TIMEOFF: Ngày kết thúc nghỉ */}
                         {isTimeOff && (
                             <div className="space-y-2">
                                 <Label htmlFor="effectiveUntil">Ngày kết thúc nghỉ <span className="text-red-500">*</span></Label>
@@ -163,6 +161,7 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                             </div>
                         )}
 
+                        {/* REGULAR / FLEXIBLE: Loại hình khám */}
                         {!isTimeOff && (
                             <div className="space-y-2">
                                 <Label htmlFor="appointmentType">Loại lịch làm việc <span className="text-red-500">*</span></Label>
@@ -176,14 +175,13 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                                     <SelectContent>
                                         <SelectItem value={AppointmentType.IN_CLINIC}>Lịch khám tại phòng</SelectItem>
                                         <SelectItem value={AppointmentType.VIDEO}>Lịch tư vấn trực tuyến</SelectItem>
-
                                     </SelectContent>
                                 </Select>
                             </div>
                         )}
                     </div>
 
-                    {/* --- Time Range --- */}
+                    {/* --- Nhóm: Giờ Bắt đầu / Kết thúc --- */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="startTime">Giờ bắt đầu <span className="text-red-500">*</span></Label>
@@ -209,7 +207,7 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
 
                     {!isTimeOff && (
                         <>
-                            {/* --- Slot Configuration --- */}
+                            {/* --- Nhóm: Cấu hình Slot --- */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="slotCapacity">Số lượt khám trên một slot <span className="text-red-500">*</span></Label>
@@ -238,7 +236,7 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                                 </div>
                             </div>
 
-                            {/* --- Booking Rules --- */}
+                            {/* --- Nhóm: Quy tắc đặt lịch (Booking Rules) --- */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="minimumBookingDays">Số ngày phải đặt khám trước</Label>
@@ -264,7 +262,7 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                                 </div>
                             </div>
 
-                            {/* --- Fee and Discount --- */}
+                            {/* --- Nhóm: Phí & Giảm giá --- */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="consultationFee">Phí khám</Label>
@@ -293,10 +291,9 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                         </>
                     )}
 
-                    {/* --- Notes --- */}
+                    {/* --- Cảnh báo & Ghi chú --- */}
                     {!isTimeOff && (
                         <div className="space-y-2">
-                            {/* Warning Alert similar to design */}
                             <div className="bg-orange-50 border border-orange-200 text-orange-800 p-3 rounded-md text-sm flex gap-2 items-start">
                                 <span className="mt-0.5">⚠️</span>
                                 <div>

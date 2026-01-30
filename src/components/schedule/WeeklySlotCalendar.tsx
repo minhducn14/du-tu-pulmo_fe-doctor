@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { format, addDays, startOfWeek, isSameDay, addWeeks, subWeeks } from 'date-fns';
 import { ChevronLeft, ChevronRight, Clock, Users, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { timeSlotService } from '@/services/time-slot.service';
 import type { TimeSlot } from '@/types/timeslot';
 import { AppointmentType } from '@/lib/constants';
+import { useGetWeeklySlots } from '@/hooks/use-time-slots';
 
 interface WeeklySlotCalendarProps {
     doctorId: string;
@@ -22,61 +22,54 @@ const DAYS_OF_WEEK = [
     { value: 0, label: 'Chủ nhật' },
 ];
 
+/**
+ * Component hiển thị lịch làm việc (TimeSlots) theo tuần.
+ * Sử dụng TanStack Query để lấy dữ liệu song song cho từng ngày trong tuần.
+ */
 export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
+    // State quản lý ngày bắt đầu của tuần hiện tại
     const [currentWeekStart, setCurrentWeekStart] = useState(() =>
         startOfWeek(new Date(), { weekStartsOn: 1 })
     );
-    const [slots, setSlots] = useState<TimeSlot[]>([]);
-    const [loading, setLoading] = useState(false);
+
+    // State quản lý ngày đang được mở rộng (chi tiết)
     const [expandedDay, setExpandedDay] = useState<number | null>(null);
 
-    // Generate dates for current week
+    // Tính toán danh sách các ngày trong tuần hiện tại (7 ngày)
     const weekDates = useMemo(() => {
         return DAYS_OF_WEEK.map((_, index) => addDays(currentWeekStart, index));
     }, [currentWeekStart]);
 
-    // Fetch slots for the week
-    useEffect(() => {
-        const fetchSlots = async () => {
-            if (!doctorId) return;
+    // Lấy dữ liệu slots cho cả tuần bằng custom hook (sử dụng useQueries)
+    // Hook này sẽ fetch song song API cho từng ngày
+    const slotQueries = useGetWeeklySlots(doctorId, weekDates);
 
-            setLoading(true);
-            try {
-                // Removed weekEnd unused variable
-                const allSlots: TimeSlot[] = [];
-
-                // Fetch slots for each day in the week
-                for (const date of weekDates) {
-                    const dateStr = format(date, 'yyyy-MM-dd');
-                    try {
-                        const daySlots = await timeSlotService.getAvailableSlots(doctorId, dateStr);
-                        allSlots.push(...daySlots);
-                    } catch {
-                        // Ignore errors for individual days
-                    }
-                }
-
-                setSlots(allSlots);
-            } catch (error) {
-                console.error('Failed to fetch slots:', error);
-                setSlots([]);
-            } finally {
-                setLoading(false);
+    // Tổng hợp tất cả slots từ các queries thành một mảng duy nhất
+    const slots = useMemo(() => {
+        return slotQueries.reduce((acc, query) => {
+            if (query.data) {
+                acc.push(...query.data);
             }
-        };
+            return acc;
+        }, [] as TimeSlot[]);
+    }, [slotQueries]);
 
-        fetchSlots();
-    }, [doctorId, currentWeekStart, weekDates]);
+    // Kiểm tra xem có query nào đang loading không
+    const loading = slotQueries.some(q => q.isLoading);
 
-    // Group slots by day
+    /**
+     * Nhóm slots theo ngày để hiển thị trên Calendar
+     */
     const slotsByDay = useMemo(() => {
         const grouped: Record<string, TimeSlot[]> = {};
 
+        // Khởi tạo object rỗng cho mỗi ngày trong tuần
         weekDates.forEach(date => {
             const dateStr = format(date, 'yyyy-MM-dd');
             grouped[dateStr] = [];
         });
 
+        // Phân loại slots vào các ngày tương ứng
         slots.forEach(slot => {
             const slotDate = format(new Date(slot.startTime), 'yyyy-MM-dd');
             if (grouped[slotDate]) {
@@ -84,7 +77,7 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
             }
         });
 
-        // Sort each day's slots by time
+        // Sắp xếp slots trong mỗi ngày theo thời gian bắt đầu
         Object.keys(grouped).forEach(date => {
             grouped[date].sort((a, b) =>
                 new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
@@ -94,7 +87,9 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
         return grouped;
     }, [slots, weekDates]);
 
-    // Group slots by time period
+    /**
+     * Phân nhóm slots theo buổi (Sáng, Chiều, Tối)
+     */
     const groupSlotsByPeriod = (daySlots: TimeSlot[]) => {
         const morning: TimeSlot[] = [];
         const afternoon: TimeSlot[] = [];
@@ -110,14 +105,17 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
         return { morning, afternoon, evening };
     };
 
+    // Chuyển sang tuần trước
     const handlePrevWeek = () => {
         setCurrentWeekStart(subWeeks(currentWeekStart, 1));
     };
 
+    // Chuyển sang tuần sau
     const handleNextWeek = () => {
         setCurrentWeekStart(addWeeks(currentWeekStart, 1));
     };
 
+    // Helper: Lấy màu sắc dựa trên loại lịch hẹn
     const getAppointmentTypeColor = (type?: string) => {
         switch (type) {
             case AppointmentType.IN_CLINIC:
@@ -129,17 +127,19 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
         }
     };
 
+    // Helper: Format thời gian hiển thị (HH:mm - HH:mm)
     const formatSlotTime = (slot: TimeSlot) => {
         const start = format(new Date(slot.startTime), 'HH:mm');
         const end = format(new Date(slot.endTime), 'HH:mm');
         return `${start} - ${end}`;
     };
 
+    // Text hiển thị khoảng thời gian của tuần
     const weekRangeText = `${format(currentWeekStart, 'dd/MM')} - ${format(addDays(currentWeekStart, 6), 'dd/MM/yyyy')}`;
 
     return (
         <div className="bg-white rounded-lg border shadow-sm">
-            {/* Header */}
+            {/* Header: Điều hướng tuần và chú thích */}
             <div className="flex items-center justify-between p-4 border-b">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="icon" onClick={handlePrevWeek}>
@@ -154,6 +154,7 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
                     </Button>
                 </div>
 
+                {/* Legend: Chú thích màu sắc */}
                 <div className="flex gap-4 text-sm">
                     <div className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded bg-blue-500"></span>
@@ -166,12 +167,12 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
                 </div>
             </div>
 
-            {/* Loading */}
+            {/* Loading State */}
             {loading && (
-                <div className="p-8 text-center text-gray-500">Đang tải...</div>
+                <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>
             )}
 
-            {/* Week Grid */}
+            {/* Week Grid: Hiển thị 7 ngày */}
             {!loading && (
                 <div className="grid grid-cols-7 divide-x">
                     {weekDates.map((date, index) => {
@@ -183,7 +184,7 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
 
                         return (
                             <div key={dateStr} className="min-h-[400px]">
-                                {/* Day Header */}
+                                {/* Day Header: Tên thứ, ngày và badge số lượng slot */}
                                 <div className={cn(
                                     "p-3 text-center border-b cursor-pointer transition-colors",
                                     isToday
@@ -212,7 +213,7 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
                                     </Badge>
                                 </div>
 
-                                {/* Slots */}
+                                {/* Slots Content: Danh sách các slots */}
                                 <div className="p-2 space-y-2 max-h-[350px] overflow-y-auto">
                                     {daySlots.length === 0 ? (
                                         <div className="text-center text-gray-400 text-xs py-4">
@@ -220,7 +221,7 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
                                         </div>
                                     ) : (
                                         <>
-                                            {/* Morning */}
+                                            {/* Buổi Sáng */}
                                             {periods.morning.length > 0 && (
                                                 <div className="space-y-1">
                                                     <div className="text-xs text-amber-600 font-medium px-1">
@@ -247,7 +248,7 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
                                                 </div>
                                             )}
 
-                                            {/* Afternoon */}
+                                            {/* Buổi Chiều */}
                                             {periods.afternoon.length > 0 && (
                                                 <div className="space-y-1">
                                                     <div className="text-xs text-orange-600 font-medium px-1">
@@ -274,7 +275,7 @@ export function WeeklySlotCalendar({ doctorId }: WeeklySlotCalendarProps) {
                                                 </div>
                                             )}
 
-                                            {/* Evening */}
+                                            {/* Buổi Tối */}
                                             {periods.evening.length > 0 && (
                                                 <div className="space-y-1">
                                                     <div className="text-xs text-indigo-600 font-medium px-1">

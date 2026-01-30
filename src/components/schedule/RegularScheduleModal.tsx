@@ -21,8 +21,8 @@ interface RegularScheduleModalProps {
 }
 
 interface TimeSlotData {
-    id?: string; // existing schedule id
-    tempId: string; // for new schedules
+    id?: string; // ID của lịch đã tồn tại
+    tempId: string; // ID tạm cho lịch mới, dùng làm key
     startTime: string;
     endTime: string;
     slotCapacity: number;
@@ -31,8 +31,8 @@ interface TimeSlotData {
     maxAdvanceBookingDays: number;
     consultationFee: number;
     discountPercent: number;
-    isNew: boolean;
-    isDeleted: boolean;
+    isNew: boolean; // Flag đánh dấu slot mới tạo
+    isDeleted: boolean; // Flag đánh dấu slot đã bị xóa
 }
 
 interface DayData {
@@ -51,6 +51,7 @@ const DAYS_OF_WEEK = [
     { value: 0, label: 'Chủ nhật' },
 ];
 
+// Helper: Tạo dữ liệu cho một slot mới mặc định
 const createEmptySlot = (): TimeSlotData => ({
     tempId: `temp-${Date.now()}-${Math.random()}`,
     startTime: '09:00',
@@ -65,21 +66,33 @@ const createEmptySlot = (): TimeSlotData => ({
     isDeleted: false,
 });
 
+/**
+ * Modal quản lý Lịch Làm Việc Cốt Định (Regular Schedule).
+ * Cho phép thiết lập lịch theo từng ngày trong tuần, copy cấu hình từ ngày này sang ngày khác.
+ */
 export function RegularScheduleModal({ open, onClose, schedules, onSave }: RegularScheduleModalProps) {
+    // Loại lịch làm việc đang chọn (Khám tại phòng / Tư vấn trực tuyến)
     const [appointmentType, setAppointmentType] = useState<AppointmentType>(AppointmentType.IN_CLINIC);
+
+    // Dữ liệu local quản lý trạng thái các ngày và slots trong modal
     const [daysData, setDaysData] = useState<DayData[]>([]);
+
     const [saving, setSaving] = useState(false);
+
+    // State cho Popover Copy
     const [copyPopoverOpen, setCopyPopoverOpen] = useState<number | null>(null);
     const [copyTargets, setCopyTargets] = useState<number[]>([]);
 
-    // Initialize data from schedules
+    // Effect: Khởi tạo dữ liệu daysData từ props schedules khi modal mở
     useEffect(() => {
         if (!open) return;
 
+        // Lọc schedules theo loại lịch đang chọn (Regular + AppointmentType)
         const filteredSchedules = schedules.filter(
             s => s.scheduleType === ScheduleType.REGULAR && s.appointmentType === appointmentType
         );
 
+        // Map schedules vào cấu trúc DayData để hiển thị
         const newDaysData: DayData[] = DAYS_OF_WEEK.map(day => {
             const daySchedules = filteredSchedules.filter(s => s.dayOfWeek === day.value);
             return {
@@ -105,19 +118,22 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
         setDaysData(newDaysData);
     }, [open, schedules, appointmentType]);
 
+    // Handler: Bật/Tắt lịch cho một ngày
     const toggleDay = (dayOfWeek: number, enabled: boolean) => {
         setDaysData(prev => prev.map(d => {
             if (d.dayOfWeek === dayOfWeek) {
                 return {
                     ...d,
                     enabled,
-                    slots: enabled && d.slots.length === 0 ? [createEmptySlot()] : d.slots,
+                    // Nếu bật lên mà chưa có slot nào thì tự thêm 1 slot mặc định
+                    slots: enabled && d.slots.filter(s => !s.isDeleted).length === 0 ? [createEmptySlot()] : d.slots,
                 };
             }
             return d;
         }));
     };
 
+    // Handler: Thêm slot mới cho một ngày
     const addSlot = (dayOfWeek: number) => {
         setDaysData(prev => prev.map(d => {
             if (d.dayOfWeek === dayOfWeek) {
@@ -127,6 +143,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
         }));
     };
 
+    // Handler: Cập nhật thông tin của một slot
     const updateSlot = (dayOfWeek: number, tempId: string, updates: Partial<TimeSlotData>) => {
         setDaysData(prev => prev.map(d => {
             if (d.dayOfWeek === dayOfWeek) {
@@ -139,6 +156,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
         }));
     };
 
+    // Handler: Xóa một slot
     const deleteSlot = (dayOfWeek: number, tempId: string) => {
         setDaysData(prev => prev.map(d => {
             if (d.dayOfWeek === dayOfWeek) {
@@ -147,9 +165,9 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                     slots: d.slots.map(s => {
                         if (s.tempId === tempId) {
                             if (s.isNew) {
-                                return null; // Remove new slots entirely
+                                return null; // Nếu là slot mới (chưa lưu) thì xóa khỏi mảng
                             }
-                            return { ...s, isDeleted: true }; // Mark existing for deletion
+                            return { ...s, isDeleted: true }; // Nếu là slot đã có DB thì đánh dấu xóa soft
                         }
                         return s;
                     }).filter(Boolean) as TimeSlotData[],
@@ -159,13 +177,14 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
         }));
     };
 
+    // Handler: Copy cấu hình từ một ngày sang các ngày khác
     const copyToOtherDays = (sourceDayOfWeek: number) => {
         const sourceDay = daysData.find(d => d.dayOfWeek === sourceDayOfWeek);
         if (!sourceDay) return;
 
         setDaysData(prev => prev.map(d => {
             if (copyTargets.includes(d.dayOfWeek)) {
-                // Copy slots from source, marking them as new
+                // Tạo bản sao các slots từ ngày nguồn, đánh dấu là mới
                 const copiedSlots = sourceDay.slots
                     .filter(s => !s.isDeleted)
                     .map(s => ({
@@ -177,6 +196,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                 return {
                     ...d,
                     enabled: true,
+                    // Giữ lại các slots cũ (đánh dấu xóa) + thêm slots mới copy
                     slots: [...d.slots.map(s => ({ ...s, isDeleted: true })), ...copiedSlots],
                 };
             }
@@ -187,6 +207,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
         setCopyTargets([]);
     };
 
+    // Handler: Lưu thay đổi (Gọi prop onSave từ parent)
     const handleSave = async () => {
         setSaving(true);
         try {
@@ -195,15 +216,17 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
 
             daysData.forEach(day => {
                 if (!day.enabled) {
-                    // Delete all existing schedules for disabled days
+                    // Nếu ngày bị tắt -> Xóa tất cả lịch của ngày đó
                     day.slots.forEach(s => {
                         if (s.id) schedulesToDelete.push(s.id);
                     });
                 } else {
                     day.slots.forEach(slot => {
                         if (slot.isDeleted && slot.id) {
+                            // Slot bị xóa
                             schedulesToDelete.push(slot.id);
                         } else if (slot.isNew && !slot.isDeleted) {
+                            // Slot mới -> Thêm vào danh sách tạo
                             schedulesToCreate.push({
                                 dayOfWeek: day.dayOfWeek,
                                 startTime: slot.startTime,
@@ -254,6 +277,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                     </p>
                 </DialogHeader>
 
+                {/* --- Header Controls: Loại lịch + Nút Save --- */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                         <Label>Loại lịch làm việc:</Label>
@@ -304,6 +328,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                             Thêm khung giờ
                                         </Button>
 
+                                        {/* --- Popover Copy --- */}
                                         <Popover
                                             open={copyPopoverOpen === day.dayOfWeek}
                                             onOpenChange={(open) => {
@@ -387,6 +412,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                 )}
                             </div>
 
+                            {/* --- Slots List --- */}
                             {day.enabled && (
                                 <div className="space-y-3">
                                     {day.slots.filter(s => !s.isDeleted).map((slot) => (
@@ -396,7 +422,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                     <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
                                                         {slot.id ? 'Đã lưu' : 'Mới'}
                                                     </span>
-                                                    <span>1h • 2 lượt</span>
+                                                    <span>1h • {slot.slotCapacity} lượt</span>
                                                 </div>
                                                 <div className="flex gap-1">
                                                     <Button
@@ -409,6 +435,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                 </div>
                                             </div>
 
+                                            {/* --- Slot Input Fields --- */}
                                             <div className="grid grid-cols-4 gap-4 mb-3">
                                                 <div>
                                                     <Label className="text-red-500">Giờ bắt đầu *</Label>
@@ -427,7 +454,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label className="text-red-500">Số lượt khám trên một slot *</Label>
+                                                    <Label className="text-red-500">Số lượt khám/slot *</Label>
                                                     <Input
                                                         type="number"
                                                         min={1}
@@ -446,6 +473,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                 </div>
                                             </div>
 
+                                            {/* --- Advanced Settings Collapsible --- */}
                                             <Collapsible>
                                                 <CollapsibleTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
                                                     <ChevronDown className="h-4 w-4" />
@@ -454,7 +482,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                 <CollapsibleContent className="pt-3">
                                                     <div className="grid grid-cols-4 gap-4">
                                                         <div>
-                                                            <Label>Số ngày phải đặt khám trước</Label>
+                                                            <Label>Số ngày đặt trước</Label>
                                                             <Input
                                                                 type="number"
                                                                 min={0}
@@ -464,7 +492,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                             />
                                                         </div>
                                                         <div>
-                                                            <Label>Số ngày đặt khám xa nhất</Label>
+                                                            <Label>Đặt xa nhất (ngày)</Label>
                                                             <Input
                                                                 type="number"
                                                                 min={1}
