@@ -1,6 +1,9 @@
 import type { Config } from "tailwindcss";
-import tailwindcssAnimate from "tailwindcss-animate";
-import tailwindcssAspectRatio from "@tailwindcss/aspect-ratio";
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const tailwindcssAnimate = require("tailwindcss-animate");
+const tailwindcssAspectRatio = require("@tailwindcss/aspect-ratio");
 
 export default {
   darkMode: ["class"],
@@ -15,6 +18,10 @@ export default {
       },
     },
     extend: {
+      // Re-adding fontFamily just in case it was missing
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
