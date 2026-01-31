@@ -1,13 +1,15 @@
-import type { Config } from "tailwindcss";
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
-const tailwindcssAnimate = require("tailwindcss-animate");
-const tailwindcssAspectRatio = require("@tailwindcss/aspect-ratio");
+import type { Config } from "tailwindcss"
+import tailwindcssAnimate from "tailwindcss-animate"
+import tailwindcssAspectRatio from "@tailwindcss/aspect-ratio"
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -18,7 +20,6 @@ export default {
       },
     },
     extend: {
-      // Re-adding fontFamily just in case it was missing
       fontFamily: {
         sans: ["Inter", "sans-serif"],
       },
@@ -74,20 +75,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
@@ -97,4 +90,4 @@ export default {
     },
   },
   plugins: [tailwindcssAnimate, tailwindcssAspectRatio],
-} satisfies Config;
+} satisfies Config
