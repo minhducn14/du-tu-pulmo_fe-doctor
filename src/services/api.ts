@@ -72,10 +72,10 @@ api.interceptors.response.use(
 
     return response;
   },
-  async (error: AxiosError<any>) => {
+  async (error: AxiosError<unknown>) => {
     const originalRequest = error.config;
     
-    // @ts-ignore - _retry is custom property
+    // @ts-expect-error - _retry is custom property
     if (error.response?.status === 401 && !originalRequest?._retry) {
       
       // If already refreshing, queue this request
@@ -94,7 +94,7 @@ api.interceptors.response.use(
           });
       }
 
-      // @ts-ignore
+      // @ts-expect-error: _retry is a custom property added to the request configuration for interceptors
       originalRequest._retry = true;
       isRefreshing = true;
 
@@ -152,7 +152,8 @@ api.interceptors.response.use(
 
     // Standard error handling for non-401 or failed retry
     const statusCode = error.response?.status ?? 0;
-    const responseData = error.response?.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const responseData = error.response?.data as any;
 
     // NestJS message
     const rawMsg = responseData?.message;
