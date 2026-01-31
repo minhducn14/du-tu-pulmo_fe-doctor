@@ -7,6 +7,8 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 const DashboardLayout = lazy(() => import('@/components/layout/DashboardLayout').then(module => ({ default: module.DashboardLayout })));
 const OverviewPage = lazy(() => import('@/pages/OverviewPage').then(module => ({ default: module.OverviewPage })));
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
+const SchedulePage = lazy(() => import('@/pages/schedule/SchedulePage').then(module => ({ default: module.SchedulePage })));
+const TimeSlotsPage = lazy(() => import('@/pages/schedule/TimeSlotsPage').then(module => ({ default: module.TimeSlotsPage })));
 
 // Loading Fallback
 const LoadingFallback = () => (
@@ -35,6 +37,8 @@ function App() {
           }>
             <Route index element={<Navigate to="/doctor/overview" replace />} />
             <Route path="overview" element={<OverviewPage />} />
+            <Route path="schedules" element={<SchedulePage />} />
+            <Route path="time-slots" element={<TimeSlotsPage />} />
             <Route path="*" element={<div>Not found</div>} />
           </Route>
 
