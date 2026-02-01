@@ -43,7 +43,7 @@ export interface CreateScheduleDto {
   discountPercent?: number;  
 }
 
-export type UpdateScheduleDto = Partial<CreateScheduleDto>;
+export type UpdateScheduleDto = Partial<CreateScheduleDto> & { id: string };
 
 export interface CreateFlexibleScheduleDto {
   specificDate: string;

@@ -54,7 +54,13 @@ const LoadingFallback = () => (
 function App() {
   return (
     <BrowserRouter>
-      <Toaster position="top-center" richColors />
+      <Toaster
+        position="top-right"
+        richColors
+        visibleToasts={5}
+        closeButton
+        duration={3000}
+      />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           {/* Public Route */}

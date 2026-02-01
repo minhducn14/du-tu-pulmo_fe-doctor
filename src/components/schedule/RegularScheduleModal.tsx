@@ -247,7 +247,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                         } else if (slot.id && !slot.isDeleted) {
                             // Slot cũ -> Thêm vào danh sách update
                             schedulesToUpdate.push({
-                                id: slot.id,
+                                id: slot.id!,
                                 dayOfWeek: day.dayOfWeek,
                                 startTime: slot.startTime,
                                 endTime: slot.endTime,
@@ -285,6 +285,22 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
         return appointmentType === AppointmentType.IN_CLINIC
             ? 'border-blue-200'
             : 'border-green-200';
+    };
+
+    const getSlotCardStyle = (isSaved: boolean) => {
+        if (!isSaved) return "bg-gray-50 border-gray-200 border-dashed"; // Mới: Nền xám, viền nét đứt
+
+        return appointmentType === AppointmentType.IN_CLINIC
+            ? "bg-blue-50 border-blue-200"
+            : "bg-green-50 border-green-200";
+    };
+
+    const getBadgeStyle = (isSaved: boolean) => {
+        if (!isSaved) return "bg-yellow-100 text-yellow-800 border-yellow-200"; // Mới: Màu vàng
+
+        return appointmentType === AppointmentType.IN_CLINIC
+            ? "bg-blue-100 text-blue-800 border-blue-200"
+            : "bg-green-100 text-green-800 border-green-200";
     };
 
     return (
@@ -436,10 +452,10 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                             {day.enabled && (
                                 <div className="space-y-3">
                                     {day.slots.filter(s => !s.isDeleted).map((slot) => (
-                                        <div key={slot.tempId} className="border rounded-lg p-4 bg-gray-50/50">
+                                        <div key={slot.tempId} className={cn("border rounded-lg p-4 transition-colors", getSlotCardStyle(!!slot.id))}>
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                                                    <span className={cn("px-2 py-1 rounded text-xs font-medium border", getBadgeStyle(!!slot.id))}>
                                                         {slot.id ? 'Đã lưu' : 'Mới'}
                                                     </span>
                                                     <span>1h • {slot.slotCapacity} lượt</span>

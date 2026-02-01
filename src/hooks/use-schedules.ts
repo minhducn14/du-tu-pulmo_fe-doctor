@@ -26,6 +26,8 @@ export function useGetSchedules(doctorId: string) {
         queryKey: SCHEDULE_KEYS.list(doctorId),
         queryFn: () => scheduleService.getSchedules(doctorId),
         enabled: !!doctorId,
+        refetchOnWindowFocus: true, // Auto refetch when window gets focus
+        refetchInterval: 60000,     // Auto polling every 1 minute
     });
 }
 
@@ -38,6 +40,8 @@ export function useGetRegularSchedules(doctorId: string) {
         queryKey: SCHEDULE_KEYS.regular(doctorId),
         queryFn: () => scheduleService.getRegularSchedules(doctorId),
         enabled: !!doctorId,
+        refetchOnWindowFocus: true,
+        refetchInterval: 60000,
     });
 }
 
@@ -50,6 +54,8 @@ export function useGetFlexibleSchedules(doctorId: string) {
         queryKey: SCHEDULE_KEYS.flexible(doctorId),
         queryFn: () => scheduleService.getFlexibleSchedules(doctorId),
         enabled: !!doctorId,
+        refetchOnWindowFocus: true,
+        refetchInterval: 60000,
     });
 }
 
@@ -62,6 +68,8 @@ export function useGetTimeOffSchedules(doctorId: string) {
         queryKey: SCHEDULE_KEYS.timeOff(doctorId),
         queryFn: () => scheduleService.getTimeOffSchedules(doctorId),
         enabled: !!doctorId,
+        refetchOnWindowFocus: true,
+        refetchInterval: 60000,
     });
 }
 
