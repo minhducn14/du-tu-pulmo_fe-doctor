@@ -76,6 +76,18 @@ export const scheduleService = {
     return response.data;
   },
 
+  // Bulk update regular schedules
+  bulkUpdateRegularSchedules: async (
+    doctorId: string,
+    schedules: UpdateScheduleDto[]
+  ): Promise<DoctorSchedule[]> => {
+    const response = await api.patch<{ updatedSchedules: DoctorSchedule[] }>(
+      `/doctors/${doctorId}/schedules/regular/bulk`,
+      { schedules }
+    );
+    return response.data.updatedSchedules;
+  },
+
   // Create flexible schedule
   createFlexibleSchedule: async (
     doctorId: string,

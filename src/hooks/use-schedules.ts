@@ -102,6 +102,22 @@ export function useBulkCreateRegularSchedules() {
  * Hook to create a Flexible Schedule via API.
  * Invalidates schedule list query on success.
  */
+/**
+ * Hook to BULK update Regular Schedules via API.
+ * Invalidates schedule list query on success.
+ */
+export function useBulkUpdateRegularSchedules() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ doctorId, schedules }: { doctorId: string; schedules: UpdateScheduleDto[] }) =>
+            scheduleService.bulkUpdateRegularSchedules(doctorId, schedules),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: SCHEDULE_KEYS.list(variables.doctorId) });
+        },
+    });
+}
+
 export function useCreateFlexibleSchedule() {
     const queryClient = useQueryClient();
 

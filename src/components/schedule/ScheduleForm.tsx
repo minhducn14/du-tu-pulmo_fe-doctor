@@ -135,27 +135,13 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                         {(isFlexible || isTimeOff) && (
                             <div className="space-y-2">
                                 <Label htmlFor="effectiveFrom">
-                                    {isTimeOff ? 'Ngày bắt đầu nghỉ' : 'Ngày khám'} <span className="text-red-500">*</span>
+                                    {isTimeOff ? 'Ngày nghỉ' : 'Ngày khám'} <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     id="effectiveFrom"
                                     type="date"
                                     value={formData.effectiveFrom}
                                     onChange={(e) => handleChange('effectiveFrom', e.target.value)}
-                                    required
-                                />
-                            </div>
-                        )}
-
-                        {/* TIMEOFF: Ngày kết thúc nghỉ */}
-                        {isTimeOff && (
-                            <div className="space-y-2">
-                                <Label htmlFor="effectiveUntil">Ngày kết thúc nghỉ <span className="text-red-500">*</span></Label>
-                                <Input
-                                    id="effectiveUntil"
-                                    type="date"
-                                    value={formData.effectiveUntil}
-                                    onChange={(e) => handleChange('effectiveUntil', e.target.value)}
                                     required
                                 />
                             </div>

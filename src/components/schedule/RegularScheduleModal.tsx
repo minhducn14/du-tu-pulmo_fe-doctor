@@ -11,13 +11,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Plus, Copy, Trash2, ChevronDown, Save } from 'lucide-react';
 import { AppointmentType, ScheduleType } from '@/lib/constants';
-import type { DoctorSchedule, CreateScheduleDto } from '@/types/schedule';
+import type { DoctorSchedule, CreateScheduleDto, UpdateScheduleDto } from '@/types/schedule';
 
 interface RegularScheduleModalProps {
     open: boolean;
     onClose: () => void;
     schedules: DoctorSchedule[];
-    onSave: (schedulesToCreate: CreateScheduleDto[], schedulesToDelete: string[]) => Promise<void>;
+    onSave: (
+        schedulesToCreate: CreateScheduleDto[],
+        schedulesToDelete: string[],
+        schedulesToUpdate: UpdateScheduleDto[]
+    ) => Promise<void>;
 }
 
 interface TimeSlotData {
@@ -213,6 +217,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
         try {
             const schedulesToCreate: CreateScheduleDto[] = [];
             const schedulesToDelete: string[] = [];
+            const schedulesToUpdate: UpdateScheduleDto[] = [];
 
             daysData.forEach(day => {
                 if (!day.enabled) {
@@ -239,12 +244,27 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                 consultationFee: slot.consultationFee || undefined,
                                 discountPercent: slot.discountPercent || undefined,
                             });
+                        } else if (slot.id && !slot.isDeleted) {
+                            // Slot cũ -> Thêm vào danh sách update
+                            schedulesToUpdate.push({
+                                id: slot.id,
+                                dayOfWeek: day.dayOfWeek,
+                                startTime: slot.startTime,
+                                endTime: slot.endTime,
+                                slotCapacity: slot.slotCapacity,
+                                slotDuration: slot.slotDuration,
+                                appointmentType,
+                                minimumBookingDays: slot.minimumBookingDays,
+                                maxAdvanceBookingDays: slot.maxAdvanceBookingDays,
+                                consultationFee: slot.consultationFee || undefined,
+                                discountPercent: slot.discountPercent || undefined,
+                            });
                         }
                     });
                 }
             });
 
-            await onSave(schedulesToCreate, schedulesToDelete);
+            await onSave(schedulesToCreate, schedulesToDelete, schedulesToUpdate);
             onClose();
         } finally {
             setSaving(false);

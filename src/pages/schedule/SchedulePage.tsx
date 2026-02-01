@@ -12,19 +12,21 @@ import {
     useGetRegularSchedules,
     useGetFlexibleSchedules,
     useGetTimeOffSchedules,
-    useCreateRegularSchedule,
+
+    useBulkCreateRegularSchedules,
     useCreateFlexibleSchedule,
     useCreateTimeOff,
     useDeleteRegularSchedule,
     useDeleteFlexibleSchedule,
     useDeleteTimeOff,
     useUpdateFlexibleSchedule,
-    useUpdateTimeOff
+    useUpdateTimeOff,
+    useBulkUpdateRegularSchedules
 } from '@/hooks/use-schedules';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import { ScheduleType } from '@/lib/constants';
-import type { CreateScheduleDto, DoctorSchedule } from '@/types/schedule';
+import type { CreateScheduleDto, DoctorSchedule, UpdateScheduleDto } from '@/types/schedule';
 
 /**
  * Trang Quản Lý Lịch Làm Việc (Full Features)
@@ -54,7 +56,8 @@ export const SchedulePage = () => {
     const [currentScheduleType, setCurrentScheduleType] = useState<ScheduleType>(ScheduleType.FLEXIBLE);
 
     // 4. Mutations
-    const createRegular = useCreateRegularSchedule();
+    const bulkCreateRegular = useBulkCreateRegularSchedules();
+    const bulkUpdateRegular = useBulkUpdateRegularSchedules();
     const deleteRegular = useDeleteRegularSchedule();
 
     const createFlexible = useCreateFlexibleSchedule();
@@ -68,13 +71,28 @@ export const SchedulePage = () => {
     // 5. Handlers
 
     // -- Regular Schedule Handlers --
-    const handleRegularSave = async (schedulesToCreate: CreateScheduleDto[], schedulesToDelete: string[]) => {
+    const handleRegularSave = async (
+        schedulesToCreate: CreateScheduleDto[],
+        schedulesToDelete: string[],
+        schedulesToUpdate: UpdateScheduleDto[]
+    ) => {
         try {
             const promises: Promise<any>[] = [];
-            // Delete first
-            schedulesToDelete.forEach(id => promises.push(deleteRegular.mutateAsync({ doctorId, id })));
-            // Create
-            schedulesToCreate.forEach(dto => promises.push(createRegular.mutateAsync({ doctorId, data: dto })));
+
+            // 1. Delete
+            if (schedulesToDelete.length > 0) {
+                schedulesToDelete.forEach(id => promises.push(deleteRegular.mutateAsync({ doctorId, id })));
+            }
+
+            // 2. Create (Bulk)
+            if (schedulesToCreate.length > 0) {
+                promises.push(bulkCreateRegular.mutateAsync({ doctorId, schedules: schedulesToCreate }));
+            }
+
+            // 3. Update (Bulk)
+            if (schedulesToUpdate.length > 0) {
+                promises.push(bulkUpdateRegular.mutateAsync({ doctorId, schedules: schedulesToUpdate }));
+            }
 
             await Promise.all(promises);
             toast.success('Cập nhật lịch cố định thành công!');
@@ -206,10 +224,13 @@ export const SchedulePage = () => {
                 {/* TAB 1: REGULAR */}
                 <TabsContent value="regular" className="space-y-4">
                     <div className="flex justify-end">
-                        <Button onClick={() => setRegularModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Thiết lập lịch cố định
-                        </Button>
+                        {/* Chỉ hiện nút Thiết lập khi chưa có lịch */}
+                        {regularSchedules.length === 0 && (
+                            <Button onClick={() => setRegularModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Thiết lập lịch cố định
+                            </Button>
+                        )}
                     </div>
                     <RegularScheduleGrid
                         schedules={regularSchedules}
