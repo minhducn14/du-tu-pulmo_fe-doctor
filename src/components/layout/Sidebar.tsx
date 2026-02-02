@@ -8,6 +8,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useGetMyQueue } from '@/hooks/use-appointments';
 import { useState } from 'react';
+import { getUser } from '@/lib/auth';
 import {
     DashboardIcon,
     ReceptionIcon,
@@ -43,6 +44,7 @@ interface NavItem {
     description?: string;
     badge?: number;
     highlight?: boolean;
+    allowedRoles?: string[];
 }
 
 interface SidebarProps {
@@ -52,6 +54,17 @@ interface SidebarProps {
 export function Sidebar({ collapsed = false }: SidebarProps) {
     const location = useLocation();
     const [openSections, setOpenSections] = useState<string[]>(['phongKham', 'hoSo']);
+    const user = getUser();
+    const userRoles = user?.roles || [];
+
+    // Check if user has required role
+    const hasRole = (allowedRoles?: string[]) => {
+        if (!allowedRoles || allowedRoles.length === 0) return true;
+        return userRoles.some(role => allowedRoles.includes(role));
+    };
+
+    // Helper to filter nav items
+    const filterNav = (items: NavItem[]) => items.filter(item => hasRole(item.allowedRoles));
 
     // Fetch queue count for badge using custom hook
     const { data: queueData } = useGetMyQueue();
@@ -68,6 +81,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             href: '/doctor/overview',
             icon: DashboardIcon,
             description: 'Dashboard tổng quan',
+            allowedRoles: ['DOCTOR'],
         },
     ];
 
@@ -78,6 +92,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             href: '/doctor/reception',
             icon: ReceptionIcon,
             description: 'Check-in bệnh nhân',
+            allowedRoles: ['RECEPTIONIST'],
         },
         {
             name: 'Hàng Đợi',
@@ -85,11 +100,13 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             icon: QueueIcon,
             description: 'Quản lý hàng đợi',
             badge: queueCount,
+            allowedRoles: ['RECEPTIONIST', 'DOCTOR'],
         },
         {
             name: 'Lịch Hôm Nay',
             href: '/doctor/today',
             icon: CalendarTodayIcon,
+            allowedRoles: ['RECEPTIONIST', 'DOCTOR'],
         },
     ];
 
@@ -99,16 +116,19 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             name: 'Phòng Chờ Video',
             href: '/doctor/video-waiting',
             icon: VideoCallIcon,
+            allowedRoles: ['DOCTOR'],
         },
         {
             name: 'Tin Nhắn',
             href: '/doctor/chat',
             icon: ChatIcon,
+            allowedRoles: ['DOCTOR'],
         },
         {
             name: 'Lịch Sử Cuộc Gọi',
             href: '/doctor/video-history',
             icon: HistoryIcon,
+            allowedRoles: ['DOCTOR'],
         },
     ];
 
@@ -118,16 +138,19 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             name: 'Lịch Hẹn',
             href: '/doctor/appointments',
             icon: CalendarIcon,
+            allowedRoles: ['DOCTOR'],
         },
         {
             name: 'Lịch Làm Việc',
             href: '/doctor/schedules',
             icon: ScheduleIcon,
+            allowedRoles: ['DOCTOR'],
         },
         {
             name: 'Khung Giờ Khám',
             href: '/doctor/time-slots',
             icon: TimeSlotIcon,
+            allowedRoles: ['DOCTOR'],
         },
     ];
 
@@ -137,16 +160,19 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             name: 'Bệnh Án Điện Tử',
             href: '/doctor/medical-records',
             icon: MedicalRecordIcon,
+            allowedRoles: ['DOCTOR'],
         },
         {
             name: 'Bệnh Nhân',
             href: '/doctor/patients',
             icon: PatientIcon,
+            allowedRoles: ['DOCTOR'],
         },
         {
             name: 'Đơn Thuốc',
             href: '/doctor/prescriptions',
             icon: PrescriptionIcon,
+            allowedRoles: ['DOCTOR'],
         },
     ];
 
@@ -157,6 +183,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             href: '/doctor/ai-xray',
             icon: AIBrainIcon,
             highlight: true,
+            allowedRoles: ['DOCTOR'],
         }
     ];
 
@@ -166,11 +193,13 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             name: 'Tủ Thuốc Phổi',
             href: '/doctor/medicine',
             icon: MedicineCabinetIcon,
+            allowedRoles: ['DOCTOR'],
         },
         {
             name: 'Phác Đồ Điều Trị',
             href: '/doctor/protocols',
             icon: ProtocolIcon,
+            allowedRoles: ['DOCTOR'],
         },
     ];
 
@@ -180,11 +209,13 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             name: 'Báo Cáo',
             href: '/doctor/reports',
             icon: ReportIcon,
+            allowedRoles: ['DOCTOR', 'ADMIN'],
         },
         {
             name: 'Hóa Đơn',
             href: '/doctor/billing',
             icon: BillingIcon,
+            allowedRoles: ['DOCTOR', 'RECEPTIONIST'],
         },
     ];
 
@@ -245,12 +276,15 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
         icon: React.ComponentType<{ className?: string }>,
         items: NavItem[]
     ) => {
+        const filteredItems = filterNav(items);
+        if (filteredItems.length === 0) return null;
+
         const Icon = icon;
         const isOpen = openSections.includes(sectionKey);
-        const hasActiveChild = items.some(
+        const hasActiveChild = filteredItems.some(
             item => location.pathname === item.href || location.pathname.startsWith(item.href + '/')
         );
-        const totalBadge = items.reduce((acc, item) => acc + (item.badge || 0), 0);
+        const totalBadge = filteredItems.reduce((acc, item) => acc + (item.badge || 0), 0);
 
         return (
             <Collapsible open={isOpen} onOpenChange={() => toggleSection(sectionKey)}>
@@ -278,17 +312,20 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                     </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className={`${collapsed ? 'pl-0' : 'pl-4'} mt-1 space-y-1`}>
-                    {items.map(renderNavItem)}
+                    {filteredItems.map(renderNavItem)}
                 </CollapsibleContent>
             </Collapsible>
         );
     };
 
-    const renderSectionHeader = (title: string) => (
-        <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-            {title}
-        </p>
-    );
+    const renderSectionHeader = (title: string, items: NavItem[]) => {
+        if (filterNav(items).length === 0) return null;
+        return (
+            <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                {title}
+            </p>
+        );
+    };
 
     // ==================== MAIN RENDER ====================
 
@@ -313,51 +350,67 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             <ScrollArea className="flex-1">
                 <nav className="space-y-1 px-2 py-4">
                     {/* 1. Tổng Quan */}
-                    <div className="space-y-1">
-                        {overviewNav.map(renderNavItem)}
-                    </div>
+                    {filterNav(overviewNav).length > 0 && (
+                        <div className="space-y-1">
+                            {filterNav(overviewNav).map(renderNavItem)}
+                        </div>
+                    )}
 
                     {/* 2. Phòng Khám */}
-                    <div className="pt-4">
-                        {!collapsed && renderSectionHeader('Phòng Khám')}
-                        {renderCollapsibleSection('Khám Bệnh', 'phongKham', ClipboardListIcon, phongKhamNav)}
-                    </div>
+                    {filterNav(phongKhamNav).length > 0 && (
+                        <div className="pt-4">
+                            {renderSectionHeader('Phòng Khám', phongKhamNav)}
+                            {renderCollapsibleSection('Khám Bệnh', 'phongKham', ClipboardListIcon, phongKhamNav)}
+                        </div>
+                    )}
 
                     {/* 3. Tư Vấn Trực Tuyến */}
-                    <div className="pt-4">
-                        {!collapsed && renderSectionHeader('Tư Vấn Trực Tuyến')}
-                        {renderCollapsibleSection('Video & Chat', 'tuVan', VideoCallIcon, tuVanNav)}
-                    </div>
+                    {filterNav(tuVanNav).length > 0 && (
+                        <div className="pt-4">
+                            {renderSectionHeader('Tư Vấn Trực Tuyến', tuVanNav)}
+                            {renderCollapsibleSection('Video & Chat', 'tuVan', VideoCallIcon, tuVanNav)}
+                        </div>
+                    )}
 
                     {/* 4. Đặt Khám Thông Minh */}
-                    <div className="pt-4">
-                        {!collapsed && renderSectionHeader('Đặt Khám')}
-                        {renderCollapsibleSection('Lịch Hẹn', 'datKham', CalendarIcon, datKhamNav)}
-                    </div>
+                    {filterNav(datKhamNav).length > 0 && (
+                        <div className="pt-4">
+                            {renderSectionHeader('Đặt Khám', datKhamNav)}
+                            {renderCollapsibleSection('Lịch Hẹn', 'datKham', CalendarIcon, datKhamNav)}
+                        </div>
+                    )}
 
                     {/* 5. Hồ Sơ */}
-                    <div className="pt-4">
-                        {!collapsed && renderSectionHeader('Hồ Sơ')}
-                        {renderCollapsibleSection('Bệnh Án & BN', 'hoSo', FolderIcon, hoSoNav)}
-                    </div>
+                    {filterNav(hoSoNav).length > 0 && (
+                        <div className="pt-4">
+                            {renderSectionHeader('Hồ Sơ', hoSoNav)}
+                            {renderCollapsibleSection('Bệnh Án & BN', 'hoSo', FolderIcon, hoSoNav)}
+                        </div>
+                    )}
 
                     {/* 6. Cận Lâm Sàng */}
-                    <div className="pt-4">
-                        {!collapsed && renderSectionHeader('Cận Lâm Sàng')}
-                        {renderCollapsibleSection('Chẩn Đoán', 'canLamSang', AIBrainIcon, canLamSangNav)}
-                    </div>
+                    {filterNav(canLamSangNav).length > 0 && (
+                        <div className="pt-4">
+                            {renderSectionHeader('Cận Lâm Sàng', canLamSangNav)}
+                            {renderCollapsibleSection('Chẩn Đoán', 'canLamSang', AIBrainIcon, canLamSangNav)}
+                        </div>
+                    )}
 
                     {/* 7. Thuốc & Điều Trị */}
-                    <div className="pt-4">
-                        {!collapsed && renderSectionHeader('Thuốc & Điều Trị')}
-                        {renderCollapsibleSection('Tủ Thuốc', 'thuoc', PillIcon, thuocNav)}
-                    </div>
+                    {filterNav(thuocNav).length > 0 && (
+                        <div className="pt-4">
+                            {renderSectionHeader('Thuốc & Điều Trị', thuocNav)}
+                            {renderCollapsibleSection('Tủ Thuốc', 'thuoc', PillIcon, thuocNav)}
+                        </div>
+                    )}
 
                     {/* 8. Báo Cáo */}
-                    <div className="pt-4">
-                        {!collapsed && renderSectionHeader('Báo Cáo')}
-                        {renderCollapsibleSection('Thống Kê', 'baoCao', ReportIcon, baoCaoNav)}
-                    </div>
+                    {filterNav(baoCaoNav).length > 0 && (
+                        <div className="pt-4">
+                            {renderSectionHeader('Báo Cáo', baoCaoNav)}
+                            {renderCollapsibleSection('Thống Kê', 'baoCao', ReportIcon, baoCaoNav)}
+                        </div>
+                    )}
 
                     {/* Thông Tin */}
                     <div className="pt-4 border-t border-gray-100 mt-4">

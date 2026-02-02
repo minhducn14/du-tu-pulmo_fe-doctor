@@ -71,7 +71,7 @@ function App() {
 
           {/* Protected Routes */}
           <Route path="/doctor" element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['DOCTOR', 'RECEPTIONIST']}>
               <DashboardLayout />
             </ProtectedRoute>
           }>
@@ -80,9 +80,17 @@ function App() {
             {/* Dashboard */}
             <Route path="overview" element={<OverviewPage />} />
 
-            {/* Phòng Khám */}
-            <Route path="reception" element={<ReceptionPage />} />
-            <Route path="queue" element={<QueuePage />} />
+            {/* Phòng Khám - Reception Only */}
+            <Route path="reception" element={
+              <ProtectedRoute allowedRoles={['RECEPTIONIST']}>
+                <ReceptionPage />
+              </ProtectedRoute>
+            } />
+            <Route path="queue" element={
+              <ProtectedRoute allowedRoles={['RECEPTIONIST', 'DOCTOR']}>
+                <QueuePage />
+              </ProtectedRoute>
+            } />
             <Route path="today" element={<TodaySchedulePage />} />
 
             {/* Tư Vấn Trực Tuyến */}
