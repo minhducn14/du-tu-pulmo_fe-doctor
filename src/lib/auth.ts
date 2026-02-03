@@ -43,6 +43,11 @@ export const removeUser = (): void => {
   localStorage.removeItem(USER_KEY);
 };
 
+export const getRole = (): string | null => {
+  const user = getUser();
+  return user?.roles?.[0] || null;
+};
+
 export const logout = (): void => {
   removeToken();
   removeRefreshToken();

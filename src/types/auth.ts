@@ -9,6 +9,8 @@ export interface AuthResponse {
   account: Account;
 }
 
+import { Role } from '@/constants/roles';
+
 export interface User {
   id: string;
   fullName?: string;
@@ -16,7 +18,7 @@ export interface User {
   status?: string;
   doctorId?: string;
   patientId?: string;
-  roles?: string[];
+  roles?: Role[];
   department?: string;
 }
 

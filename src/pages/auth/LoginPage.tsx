@@ -30,7 +30,11 @@ export default function LoginPage() {
                     setRefreshToken(response.refreshToken);
 
                     // Update Store (which also updates localStorage for User)
-                    setUser(response.account.user);
+                    const userWithRoles = {
+                        ...response.account.user,
+                        roles: response.account.roles as any
+                    };
+                    setUser(userWithRoles);
 
                     toast.success('Đăng nhập thành công!');
                     navigate('/doctor');
