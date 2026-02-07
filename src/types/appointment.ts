@@ -1,68 +1,206 @@
-export const AppointmentStatus = {
-  PENDING: 'PENDING',
-  CONFIRMED: 'CONFIRMED',
-  CHECKED_IN: 'CHECKED_IN',
-  IN_PROGRESS: 'IN_PROGRESS',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED',
-  RESCHEDULED: 'RESCHEDULED',
-  PENDING_PAYMENT: 'PENDING_PAYMENT',
-} as const;
-export type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
+import { 
+  AppointmentSource,
+  AppointmentStatus, 
+  AppointmentSubType, 
+  AppointmentType 
+} from '@/lib/constants';
 
-export const AppointmentType = {
-  IN_CLINIC: 'IN_CLINIC',
-  VIDEO: 'VIDEO',
-} as const;
-export type AppointmentType = typeof AppointmentType[keyof typeof AppointmentType];
+export { AppointmentStatus, AppointmentType };
 
 export const Gender = {
-    MALE: 'MALE',
-    FEMALE: 'FEMALE',
-    OTHER: 'OTHER'
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+  OTHER: 'OTHER'
 } as const;
 export type Gender = typeof Gender[keyof typeof Gender];
 
 
+  
 export interface Patient {
   id: string;
-  fullName: string;
-  dateOfBirth: string;
-  gender: Gender;
-  phoneNumber?: string;
-  address?: string;
-  avatarUrl?: string;
+  profileCode?: string;
+  user?: {
+    id: string;
+    email: string;
+    fullName: string;
+    dateOfBirth: string;
+    gender: Gender;
+    phoneNumber?: string;
+    address?: string;
+    avatarUrl?: string;
+  };
 }
 
 export interface Doctor {
   id: string;
-  fullName: string;
-  specialty?: string;
+  userId: string;
+  fullName?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
   avatarUrl?: string;
+  status?: string;
+  CCCD?: string;
+  province?: string;
+  ward?: string;
+  address?: string;
+  practiceStartYear?: number;
+  licenseNumber?: string;
+  licenseImageUrls?: { url: string; expiry?: string }[];
+  title?: string;
+  position?: string;
+  specialty?: string;
+  yearsOfExperience?: number;
+  primaryHospitalId?: string;
+  primaryHospital?: {
+    id: string;
+    name: string;
+    hospitalCode: string;
+    address: string;
+    phone: string;
+  } | null;
+  expertiseDescription?: string;
+  bio?: string;
+  workExperience?: string;
+  education?: string;
+  certifications?: { name: string; issuer: string; year: number }[];
+  awardsResearch?: string;
+  trainingUnits?: { url: string; name: string }[];
+  averageRating?: string;
+  totalReviews?: number;
+  verifiedAt?: string;
+  defaultConsultationFee?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TimeSlot {
   id: string;
   startTime: string;
   endTime: string;
+  date: string;
 }
 
 export interface Appointment {
   id: string;
-  appointmentDate: string;
+  appointmentNumber: string;
+
+  patientId?: string;
+
+  doctorId?: string;
+  bookedByUserId?: string;
+  hospitalId?: string;
+  screeningId?: string;
+
+  timeSlotId?: string;
+
+  scheduledAt: string;
+  durationMinutes?: number;
+  timezone?: string;
+
   status: AppointmentStatus;
   appointmentType: AppointmentType;
-  patient: Patient;
-  doctor: Doctor;
-  timeSlot?: TimeSlot;
-  reason?: string;
-  notes?: string;
-  feeAmount: number;
-  paidAmount: number;
+  subType: AppointmentSubType;
+  sourceType: AppointmentSource;
+
+  feeAmount: string;
+  paidAmount: string;
+
+  paymentId?: string;
+
+  refunded: boolean;
+  refundAmount?: string;
+  refundStatus?: string;
+
+  meetingRoomId?: string;
   meetingUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  meetingPassword?: string;
+  recordingUrl?: string;
+  recordingConsent?: boolean;
+
+  dailyCoToken?: string;
+  dailyCoChannel?: string;
+  dailyCoUid?: number;
+
+  queueNumber?: number;
+
+  chiefComplaint?: string;
+  symptoms?: string[];
+  patientNotes?: string;
+  doctorNotes?: string;
+  clinicalNotes?: string;
+
+  followUpRequired?: boolean;
+  nextAppointmentDate?: string;
+  hasFollowUp?: boolean;
+  followUpAppointmentId?: string;
+
+  reminder24hSent?: boolean;
+  reminder1hSent?: boolean;
+  reminderSentAt?: string; 
+  confirmationSent?: boolean;
+
+  checkInTime?: string;
+  startedAt?: string;
+  endedAt?: string;
+
+  startTime?: string;
+  endTime?: string;
+
+  cancelledAt?: string;
+  cancellationReason?: string;
+  cancelledBy?: string;
+
+  patientRating?: number;
+
+  patient?: Patient;
+  doctor?: Doctor;
+  timeSlot?: TimeSlot;
+
+  medicalRecordId?: string;
+
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+export interface UpdateMedicalRecordDto {
+  chiefComplaint?: string;
+  presentIllness?: string;
+  physicalExamNotes?: string;
+  assessment?: string;
+  diagnosisNotes?: string;
+  treatmentPlan?: string;
+  medicalHistory?: string;
+  surgicalHistory?: string;
+  familyHistory?: string;
+  allergies?: string[];
+  chronicDiseases?: string[];
+  currentMedications?: string[];
+  smokingStatus?: boolean;
+  smokingYears?: number;
+  alcoholConsumption?: boolean;
+  occupation?: string;
+  followUpInstructions?: string;
+  progressNotes?: string;
+  followUpRequired?: boolean;
+  nextAppointmentDate?: string;
+}
+
+export interface DoctorQueueDto {
+  doctor?: Doctor;
+  patient?: Patient;
+  totalInQueue: number;
+  waitingQueue: Appointment[];
+  inProgress: Appointment[];
+  upcomingToday: Appointment[];
+  currentPatient?: Appointment;
+  nextPatient?: Appointment;
+}
+
+export interface CheckInByNumberDto {
+  appointmentNumber: string;
+}
+
 
 export interface AppointmentQuery {
   page?: number;
@@ -78,9 +216,105 @@ export interface AppointmentQuery {
 export interface PaginatedAppointment {
     data: Appointment[];
     meta: {
-        total: number;
-        page: number;
-        lastPage: number;
-        limit: number;
+        currentPage: number;
+        itemsPerPage: number;
+        totalItems: number;
+        totalPages: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
     }
 }
+
+// =========================
+// Create Appointment DTO
+// =========================
+export interface CreateAppointmentDto {
+  timeSlotId: string;
+  patientId: string;
+  appointmentType?: AppointmentType | 'IN_CLINIC' | 'VIDEO';
+  hospitalId?: string;
+  subType?: AppointmentSubType;
+  sourceType?: AppointmentSource;
+  chiefComplaint?: string;
+  symptoms?: string[];
+  patientNotes?: string;
+}
+
+// =========================
+// Update Status DTO
+// =========================
+export interface UpdateStatusDto {
+  status: AppointmentStatus;
+}
+
+// =========================
+// Cancel Appointment DTO
+// =========================
+export interface CancelAppointmentDto {
+  reason: string;
+}
+
+// =========================
+// Reschedule Appointment DTO
+// =========================
+export interface RescheduleAppointmentDto {
+  newTimeSlotId: string;
+}
+
+// =========================
+// Complete Examination DTO
+// =========================
+export interface CompleteExaminationDto {
+  physicalExamNotes?: string;
+  assessment?: string;
+  diagnosisNotes?: string;
+  treatmentPlan?: string;
+  followUpRequired?: boolean;
+  nextAppointmentDate?: string;
+}
+
+// =========================
+// Statistics & Video
+// =========================
+export interface AppointmentStatistics {
+    totalAppointments: number;
+  completedCount: number;
+  cancelledCount: number;
+  pendingCount: number;
+  confirmedCount: number;
+  inProgressCount: number;
+  upcomingCount: number;
+  todayCount?: number;
+  upcomingAppointments: Appointment[];
+}
+
+export interface UserCallStatus {
+  inCall: boolean;
+  currentCall?: {
+    appointmentId: string;
+    roomName: string;
+    joinedAt: string;
+  };
+}
+
+export interface VideoCallStatus {
+  canJoin: boolean;
+  appointmentStatus: AppointmentStatus;
+  meetingUrl?: string;
+  scheduledAt?: string;
+  minutesUntilStart?: number;
+  isEarly?: boolean;
+  isLate?: boolean;
+  participantsInCall?: string[];
+  message?: string;
+}
+
+export interface VideoCallJoinResponse {
+  token: string;
+  url: string;
+}
+
+// =========================
+// End of file
+// =========================
+
