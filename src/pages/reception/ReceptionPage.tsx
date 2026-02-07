@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useSearchAppointments } from '@/hooks/use-appointments';
+import { useEncounterActions } from '@/hooks/use-encounter-actions';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { appointmentService } from '@/services/appointment.service';
-import type { Appointment } from '@/types/appointment';
 import { AppointmentStatus } from '@/types/appointment';
-import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { SearchIcon, CheckCircleIcon, UserIcon } from 'lucide-react';
 import {
@@ -20,42 +19,21 @@ import { Badge } from '@/components/ui/badge';
 
 export const ReceptionPage = () => {
     const [search, setSearch] = useState('');
-    const [appointments, setAppointments] = useState<Appointment[]>([]);
-    const [loading, setLoading] = useState(false);
     const [checkInLoading, setCheckInLoading] = useState<string | null>(null);
+    const { checkInAsync } = useEncounterActions();
 
-    const fetchAppointments = async () => {
-        setLoading(true);
-        try {
-            // Default to today and status CONFIRMED + PENDING_PAYMENT
-            // In a real app, this might be more complex
-            const result = await appointmentService.searchAppointments({
-                search,
-                // limit: 50,
-            });
-            setAppointments(result.data);
-        } catch (error) {
-            console.error(error);
-            // toast.error('Không thể tải danh sách lịch hẹn');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: appointmentData, isLoading: loading, refetch } = useSearchAppointments({
+        search,
+    });
 
-    useEffect(() => {
-        fetchAppointments();
-    }, []);
+    const appointments = appointmentData?.data || [];
 
     const handleCheckIn = async (id: string) => {
         setCheckInLoading(id);
         try {
-            await appointmentService.checkIn(id);
-            toast.success('Check-in thành công');
-            // Refresh list
-            fetchAppointments();
+            await checkInAsync(id);
         } catch (error) {
             console.error(error);
-            // toast.error('Check-in thất bại');
         } finally {
             setCheckInLoading(null);
         }
@@ -63,7 +41,7 @@ export const ReceptionPage = () => {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        fetchAppointments();
+        refetch();
     };
 
     const getStatusBadge = (status: AppointmentStatus) => {
@@ -134,20 +112,20 @@ export const ReceptionPage = () => {
                                 <TableRow key={apt.id}>
                                     <TableCell>
                                         <div className="flex flex-col">
-                                            <span className="font-medium text-gray-900">{apt.patient.fullName}</span>
-                                            <span className="text-xs text-gray-500">{apt.reason}</span>
+                                            <span className="font-medium text-gray-900">{apt.patient?.user?.fullName}</span>
+                                            <span className="text-xs text-gray-500">{apt?.chiefComplaint}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <UserIcon className="h-3 w-3" />
-                                            {apt.doctor.fullName}
+                                            {apt.doctor?.fullName}
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col text-sm">
                                             <span className="font-medium text-gray-900">
-                                                {format(new Date(apt.appointmentDate), 'dd/MM/yyyy')}
+                                                {format(new Date(apt.scheduledAt), 'dd/MM/yyyy')}
                                             </span>
                                             {apt.timeSlot && (
                                                 <span className="text-gray-500 text-xs">
