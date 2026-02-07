@@ -6,13 +6,11 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useGetMyQueue } from '@/hooks/use-appointments';
 import { useState } from 'react';
 import { getUser } from '@/lib/auth';
 import {
     DashboardIcon,
     ReceptionIcon,
-    QueueIcon,
     CalendarTodayIcon,
     VideoCallIcon,
     ChatIcon,
@@ -66,11 +64,9 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
     // Helper to filter nav items
     const filterNav = (items: NavItem[]) => items.filter(item => hasRole(item.allowedRoles));
 
-    // Fetch queue count for badge using custom hook
-    const { data: queueData } = useGetMyQueue();
-
-    const queueCount = queueData?.totalInQueue || 0;
-    // const inProgressCount = queueData?.inProgress?.length || 0; // Unused for now
+    // Fetch queue count for badge (TODO: Re-enable when badge usage is implemented)
+    // const { data: queueData } = useGetMyQueue();
+    // const queueCount = queueData?.totalInQueue || 0;
 
     // ==================== MENU STRUCTURE ====================
 
@@ -95,12 +91,12 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             allowedRoles: ['RECEPTIONIST'],
         },
         {
-            name: 'Hàng Đợi',
-            href: '/doctor/queue',
-            icon: QueueIcon,
-            description: 'Quản lý hàng đợi',
-            badge: queueCount,
-            allowedRoles: ['RECEPTIONIST', 'DOCTOR'],
+            name: 'Quản Lý Khám',
+            href: '/doctor/queue-manager',
+            icon: ClipboardListIcon,
+            description: 'Bảng quản lý khám bệnh',
+            highlight: true,
+            allowedRoles: ['DOCTOR'],
         },
         {
             name: 'Lịch Hôm Nay',

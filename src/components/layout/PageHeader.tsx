@@ -60,7 +60,6 @@ export function PageHeader({
                         name: displayName,
                         avatarUrl: user?.avatarUrl,
                         roleLabel: user?.roles?.[0] || 'Bác sĩ',
-                        deptLabel: user?.department,
                     }}
                     notificationCount={notificationCount}
                     onProfile={handleProfile}

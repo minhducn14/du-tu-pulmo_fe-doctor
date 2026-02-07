@@ -12,7 +12,9 @@ const TimeSlotsPage = lazy(() => import('@/pages/schedule/TimeSlotsPage').then(m
 
 // New Pages
 const ReceptionPage = lazy(() => import('@/pages/reception/ReceptionPage'));
-const QueuePage = lazy(() => import('@/pages/reception/QueuePage'));
+// const QueuePage = lazy(() => import('@/pages/reception/QueuePage'));
+const QueueManagerPage = lazy(() => import('@/pages/doctor/QueueManagerPage'));
+const InClinicExamPage = lazy(() => import('@/pages/doctor/encounters/InClinicExamPage'));
 const TodaySchedulePage = lazy(() => import('@/pages/reception/TodaySchedulePage'));
 const VideoWaitingPage = lazy(() => import('@/pages/consultation/VideoWaitingPage'));
 const ChatPage = lazy(() => import('@/pages/consultation/ChatPage'));
@@ -86,9 +88,10 @@ function App() {
                 <ReceptionPage />
               </ProtectedRoute>
             } />
-            <Route path="queue" element={
-              <ProtectedRoute allowedRoles={['RECEPTIONIST', 'DOCTOR']}>
-                <QueuePage />
+            {/* <Route path="queue" element={...} /> removed */}
+            <Route path="queue-manager" element={
+              <ProtectedRoute allowedRoles={['DOCTOR']}>
+                <QueueManagerPage />
               </ProtectedRoute>
             } />
             <Route path="today" element={<TodaySchedulePage />} />
@@ -112,6 +115,9 @@ function App() {
 
             {/* Cận Lâm Sàng */}
             <Route path="ai-xray" element={<AiXrayPage />} />
+
+            {/* In-Clinic Encounter - ADDED */}
+            <Route path="encounters/:appointmentId/in-clinic" element={<InClinicExamPage />} />
 
             {/* Thuốc & Điều Trị */}
             <Route path="medicine" element={<MedicinePage />} />
