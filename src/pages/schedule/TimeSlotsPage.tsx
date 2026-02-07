@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useGetAvailableSlots } from '@/hooks/use-time-slots';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -19,36 +20,12 @@ export const TimeSlotsPage = () => {
     const { user } = useAppStore();
     const doctorId = user?.doctorId || '';
 
-    const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
-    const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-
     const [formOpen, setFormOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
-    useEffect(() => {
-        loadTimeSlots();
-    }, [selectedDate, doctorId]);
-
-    const loadTimeSlots = async () => {
-        if (!doctorId) {
-            toast.error('Không tìm thấy thông tin bác sĩ');
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const slots = await timeSlotService.getAvailableTimeSlots(doctorId, selectedDate);
-            setTimeSlots(slots);
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error && 'response' in error
-                ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
-                : undefined;
-            toast.error(errorMessage || 'Không thể tải danh sách time slots');
-        } finally {
-            setLoading(false);
-        }
-    };
+    // TanStack Query Hook
+    const { data: timeSlots = [], isLoading: loading, refetch } = useGetAvailableSlots(doctorId, selectedDate);
 
     const handleCreate = () => {
         setSelectedSlot(null);
@@ -71,7 +48,7 @@ export const TimeSlotsPage = () => {
         try {
             await timeSlotService.deleteTimeSlot(doctorId, slot.id);
             toast.success('Xóa time slot thành công');
-            loadTimeSlots();
+            refetch();
         } catch (error: unknown) {
             const errorMessage = error instanceof Error && 'response' in error
                 ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
@@ -86,7 +63,7 @@ export const TimeSlotsPage = () => {
                 isAvailable: !slot.isAvailable,
             });
             toast.success(`${slot.isAvailable ? 'Tắt' : 'Bật'} khả dụng thành công`);
-            loadTimeSlots();
+            refetch();
         } catch (error: unknown) {
             const errorMessage = error instanceof Error && 'response' in error
                 ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
@@ -105,7 +82,7 @@ export const TimeSlotsPage = () => {
                 toast.success('Tạo time slot thành công');
             }
             setFormOpen(false);
-            loadTimeSlots();
+            refetch();
         } catch (error: unknown) {
             const errorMessage = error instanceof Error && 'response' in error
                 ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
