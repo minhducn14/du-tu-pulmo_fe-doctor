@@ -15,6 +15,7 @@ const ReceptionPage = lazy(() => import('@/pages/reception/ReceptionPage'));
 // const QueuePage = lazy(() => import('@/pages/reception/QueuePage'));
 const QueueManagerPage = lazy(() => import('@/pages/doctor/QueueManagerPage'));
 const InClinicExamPage = lazy(() => import('@/pages/doctor/encounters/InClinicExamPage'));
+const VideoExamPage = lazy(() => import('@/pages/doctor/encounters/VideoExamPage'));
 const TodaySchedulePage = lazy(() => import('@/pages/reception/TodaySchedulePage'));
 const VideoWaitingPage = lazy(() => import('@/pages/consultation/VideoWaitingPage'));
 const ChatPage = lazy(() => import('@/pages/consultation/ChatPage'));
@@ -118,6 +119,7 @@ function App() {
 
             {/* In-Clinic Encounter - ADDED */}
             <Route path="encounters/:appointmentId/in-clinic" element={<InClinicExamPage />} />
+            <Route path="encounters/:appointmentId/video" element={<VideoExamPage />} />
 
             {/* Thuốc & Điều Trị */}
             <Route path="medicine" element={<MedicinePage />} />

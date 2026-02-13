@@ -27,9 +27,9 @@ interface QueueCardProps {
     item: Appointment;
     onStartExam?: (id: string) => void;
     onJoinVideo?: (id: string) => void;
-    onComplete?: (id: string) => void;
+    onComplete?: (id: string, type?: string) => void;
     onViewDetails?: (id: string) => void;
-    onOpenRecord?: (id: string) => void;
+    onOpenRecord?: (id: string, type?: string) => void;
 }
 
 export function QueueCard({
@@ -140,7 +140,7 @@ export function QueueCard({
             return (
                 <div className="flex gap-2">
                     <Button
-                        onClick={() => onOpenRecord?.(item.id)}
+                        onClick={() => onOpenRecord?.(item.id, item.appointmentType)}
                         variant="outline"
                         className="flex-1"
                         size="sm"
@@ -149,7 +149,7 @@ export function QueueCard({
                         MỞ BỆNH ÁN
                     </Button>
                     <Button
-                        onClick={() => onComplete?.(item.id)}
+                        onClick={() => onComplete?.(item.id, item.appointmentType)}
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                         size="sm"
                     >
@@ -232,7 +232,7 @@ export function QueueCard({
                                     Xem chi tiết
                                 </DropdownMenuItem>
                                 {canManageExam && (
-                                    <DropdownMenuItem onClick={() => onOpenRecord?.(item.id)}>
+                                    <DropdownMenuItem onClick={() => onOpenRecord?.(item.id, item.appointmentType)}>
                                         Mở bệnh án
                                     </DropdownMenuItem>
                                 )}

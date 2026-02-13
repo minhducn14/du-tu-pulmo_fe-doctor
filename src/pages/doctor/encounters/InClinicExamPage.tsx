@@ -16,8 +16,8 @@ export default function InClinicExamPage() {
     const { setTitle } = useDashboardLayout();
 
     const encounter = useEncounterLegacy(appointmentId!);
-    console.log("encounter: ", encounter);
     const [completionModalOpen, setCompletionModalOpen] = useState(false);
+    const [starting, setStarting] = useState(false);
 
     const startedOnceRef = useRef(false);
 
@@ -26,22 +26,33 @@ export default function InClinicExamPage() {
     }, [setTitle]);
 
     useEffect(() => {
+        if (encounter.appointment && encounter.appointment.appointmentType === 'VIDEO') {
+            navigate(`/doctor/encounters/${appointmentId}/video`, { replace: true });
+        }
+    }, [encounter.appointment?.appointmentType, appointmentId, navigate]);
+
+    useEffect(() => {
         if (!encounter.appointment || startedOnceRef.current) return;
 
         const status = encounter.appointment.status;
 
         if (status === 'CHECKED_IN' || status === 'CONFIRMED') {
             startedOnceRef.current = true;
+            setStarting(true);
 
             appointmentService.startExamination(appointmentId!)
                 .then(() => {
                     toast.success('Đã bắt đầu khám bệnh');
-                    encounter.refetch();
+                    return encounter.refetch();
+                })
+                .then(() => {
+                    setStarting(false);
                 })
                 .catch((error) => {
                     toast.error('Không thể bắt đầu khám');
                     console.error(error);
                     startedOnceRef.current = false;
+                    setStarting(false);
                 });
         }
     }, [encounter.appointment?.status, appointmentId, encounter.refetch]);
@@ -59,7 +70,7 @@ export default function InClinicExamPage() {
         }
     };
 
-    if (encounter.loading) {
+    if (encounter.loading || starting) {
         return (
             <div className="h-full flex items-center justify-center">
                 <div className="text-center">

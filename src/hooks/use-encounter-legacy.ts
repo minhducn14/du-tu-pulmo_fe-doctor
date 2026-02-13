@@ -44,6 +44,7 @@ export function useEncounterLegacy(appointmentId: string) {
   const [nextAppointmentDate, setNextAppointmentDate] = useState('');
   
   const [vitalSignsChanged, setVitalSignsChanged] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   
   // Auto-save states
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -105,8 +106,6 @@ export function useEncounterLegacy(appointmentId: string) {
             smokingStatus: normalizeBoolean((recordData as any).smokingStatus),
             alcoholConsumption: normalizeBoolean((recordData as any).alcoholConsumption),
         } as unknown as MedicalRecord;
-        console.log("recordData", recordData);
-        console.log("normalized", normalized);
         setMedicalRecord(normalized);
     } else {
         setMedicalRecord({
@@ -227,6 +226,17 @@ export function useEncounterLegacy(appointmentId: string) {
 
   const updateRecord = useCallback((field: keyof MedicalRecord, value: unknown) => {
     setMedicalRecord(prev => prev ? { ...prev, [field]: value } : null);
+    setIsDirty(true);
+  }, []);
+
+  const updateFollowUpRequired = useCallback((value: boolean) => {
+    setFollowUpRequired(value);
+    setIsDirty(true);
+  }, []);
+
+  const updateNextAppointmentDate = useCallback((value: string) => {
+    setNextAppointmentDate(value);
+    setIsDirty(true);
   }, []);
   
   const saveMutation = useMutation({
@@ -237,6 +247,7 @@ export function useEncounterLegacy(appointmentId: string) {
         lastSavedSnapshotRef.current = getCurrentFormSnapshot();
         setAutoSaveTime(new Date());
         setAutoSaveStatus('saved');
+        setIsDirty(false);
         queryClient.invalidateQueries({ queryKey: ['encounter', appointmentId] });
     },
     onError: (error) => {
@@ -257,9 +268,12 @@ export function useEncounterLegacy(appointmentId: string) {
   }, [medicalRecord, buildUpdateDto, saveMutation]);
 
   const performAutoSave = useCallback(async () => {
-    if (!canEdit || !medicalRecord) return;
+    if (!canEdit || !medicalRecord || !isDirty) return;
     const currentSnapshot = getCurrentFormSnapshot();
-    if (currentSnapshot === lastSavedSnapshotRef.current) return;
+    if (currentSnapshot === lastSavedSnapshotRef.current) {
+        setIsDirty(false);
+        return;
+    }
 
     const dto = buildUpdateDto();
     if (!dto) return;
@@ -381,8 +395,8 @@ export function useEncounterLegacy(appointmentId: string) {
     
     setEditableVitals,
     setVitalSignsChanged,
-    setFollowUpRequired,
-    setNextAppointmentDate,
+    setFollowUpRequired: updateFollowUpRequired,
+    setNextAppointmentDate: updateNextAppointmentDate,
     setPrescriptions,
   };
 }

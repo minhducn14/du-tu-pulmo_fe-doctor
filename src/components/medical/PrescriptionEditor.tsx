@@ -17,11 +17,7 @@ import {
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
+
 import {
     Select,
     SelectContent,
@@ -132,6 +128,18 @@ export const PrescriptionEditor = React.forwardRef<PrescriptionEditorHandle, Pre
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Medicine[]>([]);
     const [searching, setSearching] = useState(false);
+    const searchContainerRef = useRef<HTMLDivElement>(null);
+
+    // Click outside handler
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+                setSearchOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Initial load sync
     useEffect(() => {
@@ -178,13 +186,9 @@ export const PrescriptionEditor = React.forwardRef<PrescriptionEditorHandle, Pre
 
     useEffect(() => {
         const search = async () => {
-            // if (searchQuery.length < 2) {
-            //     setSearchResults([]);
-            //     return;
-            // }
-            // setSearching(true);
+            setSearching(true);
             try {
-                const results = await medicineService.quickSearch(searchQuery);
+                const results = await medicineService.quickSearch(searchQuery || '');
                 setSearchResults(results);
             } catch (error) {
                 console.error('Failed to search medicines:', error);
@@ -203,7 +207,6 @@ export const PrescriptionEditor = React.forwardRef<PrescriptionEditorHandle, Pre
             setSearchOpen(false);
             return;
         }
-        console.log(medicine);
         const newItem: PrescriptionItemState = {
             medicineId: medicine.id,
             medicineName: medicine.name,
@@ -274,19 +277,6 @@ export const PrescriptionEditor = React.forwardRef<PrescriptionEditorHandle, Pre
 
     const buildSnapshot = () => buildSnapshotFrom(diagnosis, notes, items);
 
-    const hasValidFrequencies = () => {
-        const invalidItem = items.find((item) => {
-            const totalDaily = (item.morning || 0) + (item.noon || 0) + (item.afternoon || 0) + (item.evening || 0);
-            return totalDaily <= 0;
-        });
-        if (invalidItem) {
-            toast.error('Vui l?ng nh?p ?t nh?t 1 trong c?c l?n d?ng (s?ng/tr?a/chi?u/t?i).');
-            return false;
-        }
-        return true;
-    };
-
-
     const handleSave = () => {
         if (!diagnosis.trim() && !initialData) {
             // toast.error('Vui lòng nhập chẩn đoán');
@@ -330,56 +320,54 @@ export const PrescriptionEditor = React.forwardRef<PrescriptionEditorHandle, Pre
             </div>
 
             {/* Search Input - Full Width */}
-            <Popover open={searchOpen} onOpenChange={setSearchOpen}>
-                <PopoverTrigger asChild>
-                    <div className="relative w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                            placeholder="Tìm theo mã, tên hàng hóa, hoạt chất..."
-                            className="pl-9 w-full bg-white"
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                if (!searchOpen) setSearchOpen(true);
-                            }}
-                            disabled={disabled}
-                            onClick={() => setSearchOpen(true)}
-                        />
+            <div className="relative w-full" ref={searchContainerRef}>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                    placeholder="Tìm theo mã, tên hàng hóa, hoạt chất..."
+                    className="pl-9 w-full bg-white"
+                    value={searchQuery}
+                    onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        if (!searchOpen) setSearchOpen(true);
+                    }}
+                    disabled={disabled}
+                    onFocus={() => setSearchOpen(true)}
+                />
+                {searchOpen && (
+                    <div className="absolute top-full left-0 w-full z-50 mt-1 bg-white border rounded-md shadow-lg">
+                        <Command>
+                            <CommandList>
+                                {searching && <CommandEmpty>Đang tìm kiếm...</CommandEmpty>}
+                                {!searching && searchResults.length === 0 && <CommandEmpty>Không tìm thấy thuốc</CommandEmpty>}
+                                <CommandGroup heading="Kết quả tìm kiếm">
+                                    {searchResults.map((medicine) => (
+                                        <CommandItem
+                                            key={medicine.id}
+                                            onSelect={() => addMedicine(medicine)}
+                                            className="cursor-pointer py-3"
+                                        >
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-bold text-gray-900">{medicine.name}</span>
+                                                    <span className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded">
+                                                        {medicine.packing || 'Chưa có trong kho'}
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm text-gray-600">
+                                                    Hoạt chất: {medicine.genericName || '---'}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    NSX: {medicine.manufacturer || '---'}
+                                                </div>
+                                            </div>
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
                     </div>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 w-[600px]" align="start">
-                    <Command>
-                        <CommandList>
-                            {searching && <CommandEmpty>Đang tìm kiếm...</CommandEmpty>}
-                            {!searching && searchResults.length === 0 && <CommandEmpty>Không tìm thấy thuốc</CommandEmpty>}
-                            <CommandGroup heading="Kết quả tìm kiếm">
-                                {searchResults.map((medicine) => (
-                                    <CommandItem
-                                        key={medicine.id}
-                                        onSelect={() => addMedicine(medicine)}
-                                        className="cursor-pointer py-3"
-                                    >
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-bold text-gray-900">{medicine.name}</span>
-                                                <span className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded">
-                                                    {medicine.packing || 'Chưa có trong kho'}
-                                                </span>
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                                Hoạt chất: {medicine.genericName || '---'}
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                                NSX: {medicine.manufacturer || '---'}
-                                            </div>
-                                        </div>
-                                    </CommandItem>
-                                ))}
-                            </CommandGroup>
-                        </CommandList>
-                    </Command>
-                </PopoverContent>
-            </Popover>
+                )}
+            </div>
 
             {/* Medicines Table */}
             <div className="border rounded-md bg-white">

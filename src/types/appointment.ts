@@ -25,7 +25,7 @@ export interface Patient {
     fullName: string;
     dateOfBirth: string;
     gender: Gender;
-    phoneNumber?: string;
+    phone?: string;
     address?: string;
     avatarUrl?: string;
   };
@@ -312,6 +312,9 @@ export interface VideoCallStatus {
 export interface VideoCallJoinResponse {
   token: string;
   url: string;
+  appointment?: {
+    data?: Appointment;
+  };
 }
 
 // =========================

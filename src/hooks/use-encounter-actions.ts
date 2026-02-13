@@ -3,6 +3,8 @@ import { appointmentService } from '@/services/appointment.service';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
+type StartExamParams = { id: string; type?: string };
+
 export function useEncounterActions() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -19,14 +21,15 @@ export function useEncounterActions() {
   });
 
   const startExamMutation = useMutation({
-    mutationFn: (id: string) => appointmentService.startExamination(id),
-    onSuccess: (_data, variables) => {
-      // Invalidate relevant queries
+    mutationFn: (params: StartExamParams) => appointmentService.startExamination(params.id),
+    onSuccess: (_data, params) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      queryClient.invalidateQueries({ queryKey: ['encounter', variables] });
-      
-      // Navigate to exam page
-      navigate(`/doctor/encounters/${variables}/in-clinic`);
+      queryClient.invalidateQueries({ queryKey: ['encounter', params.id] });
+
+      const route = params.type === 'VIDEO'
+        ? `/doctor/encounters/${params.id}/video`
+        : `/doctor/encounters/${params.id}/in-clinic`;
+      navigate(route);
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Lỗi khi bắt đầu khám');

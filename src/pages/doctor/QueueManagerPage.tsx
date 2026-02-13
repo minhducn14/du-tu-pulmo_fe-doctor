@@ -28,11 +28,9 @@ export default function QueueManagerPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const { startExamAsync } = useEncounterActions();
 
-    // TanStack Query hooks - auto-polling every 30s
     const { data: queueData, isLoading, isFetching, refetch } = useGetMyQueue();
     const { data: stats } = useGetDoctorStats();
 
-    // Fetch Completed Appointments for Today
     const today = new Date();
     const startDate = format(today, 'yyyy-MM-dd');
     const endDate = format(today, 'yyyy-MM-dd');
@@ -46,33 +44,33 @@ export default function QueueManagerPage() {
     });
     const completedToday = completedData?.data || [];
 
+    const getEncounterRoute = (id: string, type?: string) =>
+        type === 'VIDEO'
+            ? `/doctor/encounters/${id}/video`
+            : `/doctor/encounters/${id}/in-clinic`;
+
     const handleStartExam = async (id: string, appointmentType?: string) => {
         try {
             if (appointmentType === 'VIDEO') {
-                navigate(`/doctor/encounters/${id}/video`);
+                navigate(getEncounterRoute(id, 'VIDEO'));
             } else {
-                await startExamAsync(id);
-                // navigate handled in hook
+                await startExamAsync({ id, type: appointmentType });
             }
         } catch (error) {
             console.error(error);
         }
     };
 
-    const handleJoinVideo = (id: string) => {
-        navigate(`/doctor/encounters/${id}/video`);
-    };
-
-    const handleComplete = (id: string) => {
-        navigate(`/doctor/encounters/${id}/in-clinic`);
+    const handleComplete = (id: string, type?: string) => {
+        navigate(getEncounterRoute(id, type));
     };
 
     const handleViewDetails = (id: string) => {
         navigate(`/doctor/appointments/${id}`);
     };
 
-    const handleOpenRecord = (id: string) => {
-        navigate(`/doctor/encounters/${id}/in-clinic`);
+    const handleOpenRecord = (id: string, type?: string) => {
+        navigate(getEncounterRoute(id, type));
     };
 
     const getPatientName = (a: Appointment) => a.patient?.user?.fullName || '';
@@ -240,7 +238,7 @@ export default function QueueManagerPage() {
                                     key={item.id}
                                     item={item}
                                     onStartExam={(id) => handleStartExam(id, item.appointmentType)}
-                                    onJoinVideo={handleJoinVideo}
+                                    onJoinVideo={(id) => handleStartExam(id, 'VIDEO')}
                                     onViewDetails={handleViewDetails}
                                     onOpenRecord={handleOpenRecord}
                                 />

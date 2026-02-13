@@ -49,10 +49,10 @@ interface MedicalRecordWorkspaceProps {
     onSetNextAppointmentDate: (value: string) => void;
     onPrescriptionsChange?: (items: Prescription[]) => void;
 
-    // ===== P0 Fix #6: Slots for wrapper-specific UI =====
     headerRightSlot?: React.ReactNode;
     topBannerSlot?: React.ReactNode;
-    sidePanelSlot?: React.ReactNode; // For video panel on desktop
+    sidePanelSlot?: React.ReactNode;
+    compact?: boolean;
 }
 
 function Section({
@@ -122,6 +122,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
     headerRightSlot,
     topBannerSlot,
     sidePanelSlot,
+    compact,
 }: MedicalRecordWorkspaceProps) {
     const queryClient = useQueryClient();
     const { toggleSidebar } = useDashboardLayout();
@@ -320,7 +321,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                 {/* Banner slot */}
                 {topBannerSlot}
 
-                <div className="px-6 py-3 flex items-center justify-between">
+                <div className="px-3 md:px-6 py-2 md:py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Button variant="ghost" size="icon" onClick={toggleSidebar}>
                             <PanelLeft className="h-5 w-5" />
@@ -385,9 +386,9 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                 </div>
 
                 {/* Tabs */}
-                <div className="px-6 pb-3">
+                <div className="px-3 md:px-6 pb-2 md:pb-3 overflow-x-auto">
                     <Tabs value={activeTab}>
-                        <TabsList className="w-full justify-start">
+                        <TabsList className="w-full justify-start whitespace-nowrap">
                             <TabsTrigger value="info" onClick={() => handleTabClick('info')}>
                                 Thông tin
                             </TabsTrigger>
@@ -418,11 +419,11 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
             <div className="flex-1 flex min-h-0">
                 {/* Main content */}
                 <div ref={contentRef} className="flex-1 overflow-auto bg-slate-50">
-                    <div className="px-6 py-4 space-y-6">
+                    <div className="px-3 md:px-6 py-3 md:py-4 space-y-6">
                         {/* SECTION: THÔNG TIN */}
                         <div ref={sectionRefs.info} className="space-y-4 scroll-mt-[120px]">
                             <Section title="THÔNG TIN">
-                                <div className="grid grid-cols-3 gap-x-8 gap-y-2 text-sm">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2 text-sm">
                                     {/* Patient info display */}
                                     <div className="space-y-2">
                                         <div className="flex gap-2">
@@ -446,7 +447,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                                         </div>
                                         <div className="flex gap-2">
                                             <span className="text-slate-500">Điện thoại</span>
-                                            <span className="font-medium">{appointment?.patient?.user?.phoneNumber || '--'}</span>
+                                            <span className="font-medium">{appointment?.patient?.user?.phone || '--'}</span>
                                         </div>
                                     </div>
 
@@ -491,7 +492,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                                     )
                                 }
                             >
-                                <div className="grid grid-cols-8 gap-3">
+                                <div className={compact ? "grid grid-cols-2 sm:grid-cols-4 gap-3" : "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3"}>
                                     <Field label="Chiều cao*">
                                         <Input
                                             type="number"
@@ -618,7 +619,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                             </Section>
 
                             <Section title="TIỀN SỬ / THUỐC ĐANG DÙNG">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Field label="Tiền sử bệnh">
                                         <Textarea
                                             value={medicalRecord?.medicalHistory || ''}
@@ -691,7 +692,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                             </Section>
 
                             <Section title="THÔNG TIN XÃ HỘI">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Field label="Hút thuốc">
                                         <div className="flex gap-4 items-center">
                                             <Select
@@ -739,7 +740,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                                         </Select>
                                     </Field>
 
-                                    <div className="col-span-2">
+                                    <div className="md:col-span-2">
                                         <Field label="Nghề nghiệp / Yếu tố nguy cơ">
                                             <Input
                                                 value={medicalRecord?.occupation || ''}
@@ -899,8 +900,8 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                         {/* SECTION: TÁI KHÁM */}
                         <div ref={sectionRefs.followup} className="space-y-4 scroll-mt-[120px]">
                             <Section title="HẸN KHÁM">
-                                <div className="grid grid-cols-12 gap-4">
-                                    <div className="col-span-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
                                         <Field label="Có cần tái khám?">
                                             <div className="flex items-center gap-2 py-2">
                                                 <input
@@ -915,7 +916,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                                         </Field>
                                     </div>
 
-                                    <div className="col-span-4">
+                                    <div>
                                         <Field label="Ngày tái khám">
                                             <Input
                                                 type="date"
@@ -958,9 +959,9 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                     </div>
                 </div>
 
-                {/* ===== P0 Fix #6: Side Panel Slot (for video on desktop) ===== */}
+                {/* ===== Side Panel Slot (hidden on mobile) ===== */}
                 {sidePanelSlot && (
-                    <div className="w-[400px] border-l bg-white overflow-hidden">
+                    <div className="hidden lg:block lg:w-[400px] border-l bg-white overflow-hidden">
                         {sidePanelSlot}
                     </div>
                 )}
@@ -968,7 +969,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
 
             {/* ===== Footer ===== */}
             <div className="bg-white border-t sticky bottom-0 z-20">
-                <div className="px-6 py-3 flex items-center justify-end gap-3">
+                <div className="px-3 md:px-6 py-2 md:py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
                     {!isLocked && canEdit && (
                         <>
                             <Button variant="outline" onClick={handleSaveDraftClick} disabled={saving}>
