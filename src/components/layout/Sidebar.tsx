@@ -95,7 +95,6 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             href: '/doctor/queue-manager',
             icon: ClipboardListIcon,
             description: 'Bảng quản lý khám bệnh',
-            highlight: true,
             allowedRoles: ['DOCTOR'],
         },
         {

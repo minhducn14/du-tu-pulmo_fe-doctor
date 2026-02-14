@@ -3,10 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+
 import { medicalService } from '@/services/medical.service';
-import type { CreateVitalSignDto, VitalSign } from '@/types/medical.types';
-import { parseBloodPressure, formatBloodPressure } from '@/types/medical.types';
+import type { CreateVitalSignDto, VitalSign } from '@/types/medical';
+import { parseBloodPressure, formatBloodPressure } from '@/types/medical';
 import { toast } from 'sonner';
 
 interface VitalSignsModalProps {

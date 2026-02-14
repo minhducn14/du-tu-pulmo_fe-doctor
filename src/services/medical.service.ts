@@ -143,6 +143,22 @@ export const medicalService = {
   },
 
   /**
+   * Get medical records created by the current doctor
+   */
+  getMyRecords: async (): Promise<MedicalRecord[]> => {
+    const response = await api.get<MedicalRecord[]>('/medical/records/my');
+    return normalizeMedicalRecordList(response.data || []);
+  },
+
+  /**
+   * Get prescriptions created by the current doctor
+   */
+  getMyPrescriptions: async (): Promise<Prescription[]> => {
+    const response = await api.get<Prescription[]>('/medical/prescriptions/my');
+    return response.data || [];
+  },
+
+  /**
    * Get all prescriptions for a patient
    */
   getPatientPrescriptions: async (patientId: string): Promise<Prescription[]> => {
@@ -256,6 +272,23 @@ export const medicalService = {
     return response.data;
   },
 
+  /**
+   * Get medical record detail by ID
+   * @param id Medical Record ID
+   */
+    getDetail: async (id: string): Promise<MedicalRecordDetailResponse> => {
+    const response = await api.get<MedicalRecordDetailResponse>(`/medical/records/${id}/detail`);
+    return response.data;
+  },
+
+  /**
+   * Get prescription detail by ID
+   * @param id Prescription ID
+   */
+  getPrescriptionDetail: async (id: string): Promise<Prescription> => {
+    const response = await api.get<Prescription>(`/medical/prescriptions/${id}`);
+    return response.data;
+  },
 };
 
 export default medicalService;

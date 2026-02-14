@@ -775,9 +775,9 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                             <Section title="CHẨN ĐOÁN">
                                 <Field label="Chẩn đoán">
                                     <Textarea
-                                        value={medicalRecord?.assessment || ''}
+                                        value={medicalRecord?.diagnosis || ''}
                                         placeholder="Chẩn đoán..."
-                                        onChange={(e) => onUpdateRecord('assessment', e.target.value)}
+                                        onChange={(e) => onUpdateRecord('diagnosis', e.target.value)}
                                         disabled={!canEdit}
                                         className="min-h-[120px]"
                                     />
@@ -881,7 +881,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                                             appointmentId={appointmentId || ''}
                                             onSave={handleSavePrescription}
                                             loading={savingPrescription}
-                                            initialDiagnosis={medicalRecord?.assessment || medicalRecord?.diagnosisNotes || ''}
+                                            initialDiagnosis={medicalRecord?.assessment || medicalRecord?.diagnosis || ''}
                                             disabled={!canEdit}
                                             initialData={editingPrescription || undefined}
                                             onCancel={() => setEditingPrescription(null)}

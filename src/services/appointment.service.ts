@@ -6,7 +6,7 @@ import type {
     VideoCallJoinResponse, VideoCallStatus, AppointmentStatistics, UserCallStatus
 } from '@/types/appointment';
 import type { CreatePrescriptionDto } from '@/types/medical';
-
+import type { DashboardStats, DashboardPeriod } from '@/types/dashboard';
 const BASE_URL = '/appointments';
 
 export const appointmentService = {
@@ -175,6 +175,16 @@ export const appointmentService = {
     createPrescription: async (id: string, dto: CreatePrescriptionDto) => {
         const response = await api.post<ApiResponse<any>>(`${BASE_URL}/${id}/prescriptions`, dto);
         return response.data;
+    },
+
+    // ============================================
+    // Dashboard Stats
+    // ============================================
+    getMyDashboard: async (period: DashboardPeriod = 'today') => {
+        const response = await api.get<ApiResponse<DashboardStats>>(`${BASE_URL}/my/doctor/dashboard`, {
+            params: { period },
+        });
+        return response.data as unknown as DashboardStats;
     },
 };
 

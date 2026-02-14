@@ -168,7 +168,7 @@ export interface UpdateMedicalRecordDto {
   presentIllness?: string;
   physicalExamNotes?: string;
   assessment?: string;
-  diagnosisNotes?: string;
+  diagnosis?: string;
   treatmentPlan?: string;
   medicalHistory?: string;
   surgicalHistory?: string;
@@ -267,7 +267,7 @@ export interface RescheduleAppointmentDto {
 export interface CompleteExaminationDto {
   physicalExamNotes?: string;
   assessment?: string;
-  diagnosisNotes?: string;
+  diagnosis?: string;
   treatmentPlan?: string;
   followUpRequired?: boolean;
   nextAppointmentDate?: string;

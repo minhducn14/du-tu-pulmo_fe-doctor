@@ -68,7 +68,6 @@ export const scheduleService = {
     doctorId: string,
     schedules: CreateScheduleDto[]
   ): Promise<DoctorSchedule[]> => {
-    console.log(schedules);
     const response = await api.post<DoctorSchedule[]>(
       `/doctors/${doctorId}/schedules/regular/bulk`,
       { schedules }

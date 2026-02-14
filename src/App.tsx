@@ -35,6 +35,8 @@ const AboutPage = lazy(() => import('@/pages/help/AboutPage'));
 // Detail Pages
 const PatientDetailPage = lazy(() => import('@/pages/records/PatientDetailPage'));
 const AppointmentDetailPage = lazy(() => import('@/pages/appointment/AppointmentDetailPage'));
+const MedicalRecordDetailPage = lazy(() => import('@/pages/records/MedicalRecordDetailPage'));
+const PrescriptionDetailPage = lazy(() => import('@/pages/records/PrescriptionDetailPage'));
 
 // Auth & Settings
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
@@ -110,9 +112,11 @@ function App() {
 
             {/* Hồ Sơ */}
             <Route path="medical-records" element={<MedicalRecordPage />} />
+            <Route path="medical-records/:id" element={<MedicalRecordDetailPage />} />
             <Route path="patients" element={<PatientListPage />} />
             <Route path="patients/:id" element={<PatientDetailPage />} />
             <Route path="prescriptions" element={<PrescriptionPage />} />
+            <Route path="prescriptions/:id" element={<PrescriptionDetailPage />} />
 
             {/* Cận Lâm Sàng */}
             <Route path="ai-xray" element={<AiXrayPage />} />

@@ -73,7 +73,7 @@ export interface MedicalRecord {
   // Examination & Diagnosis
   physicalExamNotes?: string | null;       // Khám thực thể 
   assessment?: string | null;              // Đánh giá của bác sĩ
-  diagnosisNotes?: string | null;          // Chẩn đoán
+  diagnosis?: string | null;          // Chẩn đoán
   treatmentPlan?: string | null;           // Phác đồ điều trị
   
   // ===== EXTENDED MEDICAL FIELDS =====
@@ -151,7 +151,7 @@ export interface MedicalRecordExamination {
   presentIllness?: string;
   physicalExamNotes?: string;
   assessment?: string;
-  diagnosisNotes?: string;
+  diagnosis?: string;
   treatmentPlan?: string;
   recentRecords?: Array<{
     id: string;
@@ -198,6 +198,7 @@ export interface MedicalRecordDetailResponse {
   emergencyContactAddress?: string;
   referralDiagnosis?: string;
   chiefComplaint?: string;
+  diagnosis?: string;
   vitalSigns: {
     pulse?: number;
     temperature?: number;
@@ -221,6 +222,8 @@ export interface MedicalRecordDetailResponse {
   dischargeDiagnosis?: string;
   treatmentStartDate?: string;
   treatmentEndDate?: string;
+  primaryDiagnosis?: string;
+  secondaryDiagnosis?: string;
   prescriptions: Array<{
     id: string;
     prescriptionNumber: string;
@@ -279,7 +282,7 @@ export interface UpdateMedicalRecordDto {
   chiefComplaint?: string;
   physicalExamNotes?: string;
   assessment?: string;
-  diagnosisNotes?: string;
+  diagnosis?: string;
   treatmentPlan?: string;
   presentIllness?: string;
   medicalHistory?: string;
@@ -381,6 +384,28 @@ export interface Prescription {
   status?: string;
   items: PrescriptionItem[];
   createdAt: string;
+  medicalRecord?: {
+    id: string;
+    patientId: string;
+    doctorId: string;
+    appointmentId: string;
+    medicalRecordNumber: string;
+    diagnosis: string;
+    notes: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  patient?: {
+    id: string;
+    user: {
+      fullName: string;
+    }
+  };
+  doctor?: {
+    id: string;
+    fullName: string;
+  };
 }
 
 /**
@@ -447,6 +472,16 @@ export interface Medicine {
   price?: number;
   manufacturer?: string;
   isActive: boolean;
+  
+  goodsType?: GoodsType;
+  activeIngredient?: string;
+  content?: string;
+  countryOfOrigin?: string;
+  guide?: string;
+  registrationNumber?: string;
+  group?: MedicineGroup;
+  route?: RouteOfAdministration;
+
   createdAt: string;
   updatedAt: string;
 }

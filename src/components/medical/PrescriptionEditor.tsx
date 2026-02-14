@@ -108,20 +108,20 @@ function convertItemToDto(item: PrescriptionItemState): CreatePrescriptionItemDt
 }
 
 export const PrescriptionEditor = React.forwardRef<PrescriptionEditorHandle, PrescriptionEditorProps>(function PrescriptionEditor({
-    appointmentId,
+
     onSave,
     loading = false,
     initialDiagnosis = '',
     disabled = false,
     initialData,
     onCancel
-}: PrescriptionEditorProps, ref) {
+}: PrescriptionEditorProps, _ref) {
     const [diagnosis, setDiagnosis] = useState(initialDiagnosis);
     const [notes, setNotes] = useState('');
     const [items, setItems] = useState<PrescriptionItemState[]>([]);
 
     const initialSnapshotRef = useRef<string>('');
-    const [isDirty, setIsDirty] = useState(false);
+    const [_isDirty, setIsDirty] = useState(false);
 
     // Search state
     const [searchOpen, setSearchOpen] = useState(false);
