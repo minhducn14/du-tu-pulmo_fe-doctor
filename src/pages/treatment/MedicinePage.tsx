@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMedicines } from '@/hooks/use-medicines';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { MedicineDialog } from '@/components/medicine/MedicineDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,18 +97,16 @@ export default function MedicinePage() {
 
     return (
         <div className="flex flex-col h-full space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white border-b">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Quản lý thuốc & Vật tư</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Danh mục thuốc, thực phẩm chức năng và vật tư y tế.
-                    </p>
-                </div>
-                <Button onClick={handleCreate}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Thêm mới
-                </Button>
-            </div>
+            <PageHeader
+                title="Quản lý thuốc & Vật tư"
+                subtitle="Danh mục thuốc, thực phẩm chức năng và vật tư y tế."
+                rightSlot={
+                    <Button onClick={handleCreate}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Thêm mới
+                    </Button>
+                }
+            />
 
             <div className="p-4 space-y-4">
                 <div className="flex items-center space-x-2 bg-white p-2 rounded-md border w-full max-w-md">

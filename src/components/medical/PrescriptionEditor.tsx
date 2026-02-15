@@ -44,6 +44,7 @@ export interface PrescriptionEditorHandle {
     hasAnyItem: () => boolean;
     buildDto: () => CreatePrescriptionDto | null;
     resetDirty: () => void;
+    reset: () => void;
 }
 
 
@@ -277,6 +278,40 @@ export const PrescriptionEditor = React.forwardRef<PrescriptionEditorHandle, Pre
 
     const buildSnapshot = () => buildSnapshotFrom(diagnosis, notes, items);
 
+    React.useImperativeHandle(_ref, () => ({
+        hasUnsavedChanges: () => {
+            const currentSnapshot = buildSnapshot();
+            return currentSnapshot !== initialSnapshotRef.current;
+        },
+        hasAnyItem: () => items.length > 0,
+        buildDto: () => {
+            if (items.length === 0) return null;
+            const invalidItem = items.find((item) => {
+                const totalDaily = (item.morning || 0) + (item.noon || 0) + (item.afternoon || 0) + (item.evening || 0);
+                return totalDaily <= 0;
+            });
+            if (invalidItem) return null;
+
+            return {
+                diagnosis,
+                notes,
+                items: items.map(convertItemToDto),
+            };
+        },
+        resetDirty: () => {
+            initialSnapshotRef.current = buildSnapshot();
+            setIsDirty(false);
+        },
+        reset: () => {
+            setDiagnosis('');
+            setNotes('');
+            setItems([]);
+            setSearchQuery('');
+            setSearchResults([]);
+            initialSnapshotRef.current = buildSnapshotFrom('', '', []);
+            setIsDirty(false);
+        }
+    }));
     const handleSave = () => {
         if (!diagnosis.trim() && !initialData) {
             // toast.error('Vui lòng nhập chẩn đoán');

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useMyPrescriptions } from '@/hooks/use-medical';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,14 +44,10 @@ export default function PrescriptionPage() {
 
     return (
         <div className="flex flex-col h-full space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white border-b">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Đơn thuốc</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Quản lý và theo dõi các đơn thuốc đã kê.
-                    </p>
-                </div>
-            </div>
+            <PageHeader
+                title="Đơn thuốc"
+                subtitle="Quản lý và theo dõi các đơn thuốc đã kê."
+            />
 
             <div className="p-4 space-y-4">
                 <div className="flex items-center space-x-2 bg-white p-2 rounded-md border w-full max-w-md">
