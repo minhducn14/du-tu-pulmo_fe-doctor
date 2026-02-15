@@ -12,7 +12,6 @@ const TimeSlotsPage = lazy(() => import('@/pages/schedule/TimeSlotsPage').then(m
 
 // New Pages
 const ReceptionPage = lazy(() => import('@/pages/reception/ReceptionPage'));
-// const QueuePage = lazy(() => import('@/pages/reception/QueuePage'));
 const QueueManagerPage = lazy(() => import('@/pages/doctor/QueueManagerPage'));
 const InClinicExamPage = lazy(() => import('@/pages/doctor/encounters/InClinicExamPage'));
 const VideoExamPage = lazy(() => import('@/pages/doctor/encounters/VideoExamPage'));
@@ -41,6 +40,8 @@ const PrescriptionDetailPage = lazy(() => import('@/pages/records/PrescriptionDe
 // Auth & Settings
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
 const ProfilePage = lazy(() => import('@/pages/settings/ProfilePage'));
+const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
+const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'));
 
 // Error Pages
 const NotFoundPage = lazy(() => import('@/pages/error/NotFoundPage'));
@@ -140,6 +141,8 @@ function App() {
 
             {/* Settings */}
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
 
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Route>

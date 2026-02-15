@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
     DollarSign,
@@ -58,23 +59,25 @@ export function OverviewPage() {
     return (
         <div className="space-y-5 animate-in fade-in-50 duration-500">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900">Báo cáo tổng quan</h1>
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                    {PERIOD_OPTIONS.map((opt) => (
-                        <button
-                            key={opt.value}
-                            onClick={() => setPeriod(opt.value)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${period === opt.value
-                                ? 'bg-white text-gray-900 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                        >
-                            {opt.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
+            <PageHeader
+                title="Báo cáo tổng quan"
+                rightSlot={
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                        {PERIOD_OPTIONS.map((opt) => (
+                            <button
+                                key={opt.value}
+                                onClick={() => setPeriod(opt.value)}
+                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${period === opt.value
+                                    ? 'bg-white text-gray-900 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                }
+            />
 
             {/* 4 Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
