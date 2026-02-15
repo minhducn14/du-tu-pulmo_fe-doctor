@@ -1,15 +1,15 @@
 import api from '@/services/api';
 import type {
   MedicalRecord,
-  UpdateMedicalRecordDto,
-  VitalSign,
-  CreateVitalSignDto,
   Prescription,
   CreatePrescriptionDto,
   PatientMedicalHistory,
   MedicalRecordDetailResponse,
   SignMedicalRecordDto,
   MedicalRecordExamination,
+  UpdateMedicalRecordDto,
+  VitalSign,
+  CreateVitalSignDto,
 } from '@/types/medical';
 import type { UploadAnalyzeResponse } from '@/types/screening';
 
@@ -52,12 +52,11 @@ export const medicalService = {
   },
 
   /**
-   * Update medical record for an appointment
+   * Update medical record by ID 
    * @roles DOCTOR (own), ADMIN
-   * @condition appointment status must be IN_PROGRESS (COMPLETED is locked)
    */
-  updateMedicalRecord: async (appointmentId: string, dto: UpdateMedicalRecordDto): Promise<MedicalRecord> => {
-    const response = await api.put<MedicalRecord>(`/appointments/${appointmentId}/medical-record`, dto);
+  updateMedicalRecord: async (id: string, dto: UpdateMedicalRecordDto): Promise<MedicalRecord> => {
+    const response = await api.put<MedicalRecord>(`/medical/records/${id}`, dto);
     return normalizeMedicalRecord(response.data);
   },
 

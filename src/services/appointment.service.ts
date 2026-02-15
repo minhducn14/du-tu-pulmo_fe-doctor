@@ -5,7 +5,7 @@ import type {
     CreateAppointmentDto, CancelAppointmentDto, RescheduleAppointmentDto, CompleteExaminationDto,
     VideoCallJoinResponse, VideoCallStatus, AppointmentStatistics, UserCallStatus
 } from '@/types/appointment';
-import type { CreatePrescriptionDto } from '@/types/medical';
+import type { CreatePrescriptionDto, UpdateMedicalRecordDtoForEncounter, MedicalRecord } from '@/types/medical';
 import type { DashboardStats, DashboardPeriod } from '@/types/dashboard';
 const BASE_URL = '/appointments';
 
@@ -95,6 +95,11 @@ export const appointmentService = {
     completeExamination: async (id: string, dto: CompleteExaminationDto) => {
         const response = await api.post<ApiResponse<Appointment>>(`${BASE_URL}/${id}/complete-examination`, dto);
         return response.data as unknown as Appointment;
+    },
+
+    updateMedicalRecord: async (id: string, dto: UpdateMedicalRecordDtoForEncounter) => {
+        const response = await api.put<ApiResponse<MedicalRecord>>(`${BASE_URL}/${id}/medical-record`, dto);
+        return response.data as unknown as MedicalRecord;
     },
 
     updateClinicalInfo: async (id: string, data: any) => {

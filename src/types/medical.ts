@@ -1,4 +1,5 @@
 import type { Appointment, Doctor, Patient } from "@/types/appointment";
+import type { PatientResponse } from "./patient";
 
 // ============================================================================
 // ENUMS - Match BE enums exactly
@@ -18,6 +19,53 @@ export const PrescriptionStatusEnum = {
   EXPIRED: 'EXPIRED',
 } as const;
 export type PrescriptionStatusEnum = typeof PrescriptionStatusEnum[keyof typeof PrescriptionStatusEnum];
+
+export const ScreeningStatusEnum = {
+  UPLOADED: 'UPLOADED',
+  PENDING_AI: 'PENDING_AI',
+  AI_PROCESSING: 'AI_PROCESSING',
+  AI_COMPLETED: 'AI_COMPLETED',
+  AI_FAILED: 'AI_FAILED',
+  PENDING_DOCTOR: 'PENDING_DOCTOR',
+  DOCTOR_REVIEWING: 'DOCTOR_REVIEWING',
+  DOCTOR_COMPLETED: 'DOCTOR_COMPLETED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type ScreeningStatusEnum = typeof ScreeningStatusEnum[keyof typeof ScreeningStatusEnum];
+
+export const ScreeningPriorityEnum = {
+  LOW: 'LOW',
+  NORMAL: 'NORMAL',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT',
+  CRITICAL: 'CRITICAL',
+} as const;
+export type ScreeningPriorityEnum = typeof ScreeningPriorityEnum[keyof typeof ScreeningPriorityEnum];
+
+export const ScreeningTypeEnum = {
+  XRAY: 'XRAY',
+  CT: 'CT',
+  MRI: 'MRI',
+  ULTRASOUND: 'ULTRASOUND',
+  OTHER: 'OTHER',
+} as const;
+export type ScreeningTypeEnum = typeof ScreeningTypeEnum[keyof typeof ScreeningTypeEnum];
+
+export const DiagnosisStatusEnum = {
+  PENDING: 'PENDING',
+  NORMAL: 'NORMAL',
+  ABNORMAL: 'ABNORMAL',
+  UNCERTAIN: 'UNCERTAIN',
+} as const;
+export type DiagnosisStatusEnum = typeof DiagnosisStatusEnum[keyof typeof DiagnosisStatusEnum];
+
+export const DecisionSourceEnum = {
+  AI_ONLY: 'AI_ONLY',
+  DOCTOR_ONLY: 'DOCTOR_ONLY',
+  DOCTOR_REVIEWED_AI: 'DOCTOR_REVIEWED_AI',
+  DOCTOR_OVERRIDE_AI: 'DOCTOR_OVERRIDE_AI',
+} as const;
+export type DecisionSourceEnum = typeof DecisionSourceEnum[keyof typeof DecisionSourceEnum];
 
 // ============================================================================
 // MEDICAL RECORD TYPES - Matched with BE entity + MedicalRecordDetailResponseDto
@@ -44,9 +92,9 @@ export interface MedicalRecord {
   pdfUrl?: string | null;
   
   // ===== ADMINISTRATIVE FIELDS =====
-  recordType: string;                      // e.g., "Bệnh án Ngoại trú chung"
+  recordType: string;                      
   specialty?: string | null;
-  patientCategory?: string | null;         // e.g., "BHYT", "Dịch vụ"
+  patientCategory?: string | null;         
   insuranceNumber?: string | null;
   insuranceExpiry?: Date | null;
   emergencyContactName?: string | null;
@@ -55,11 +103,11 @@ export interface MedicalRecord {
   referralDiagnosis?: string | null;
   
   // ===== MEDICAL FIELDS =====
-  chiefComplaint?: string | null;          // Lý do khám
-  presentIllness?: string | null;          // Bệnh lý hiện tại
-  medicalHistory?: string | null;          // Tiền sử bệnh
-  surgicalHistory?: string | null;         // Tiền sử phẫu thuật
-  familyHistory?: string | null;           // Tiền sử gia đình
+  chiefComplaint?: string | null;          
+  presentIllness?: string | null;          
+  medicalHistory?: string | null;          
+  surgicalHistory?: string | null;         
+  familyHistory?: string | null;           
   allergies?: string[] | null;
   chronicDiseases?: string[] | null;
   currentMedications?: string[] | null;
@@ -71,25 +119,26 @@ export interface MedicalRecord {
   occupation?: string | null;
   
   // Examination & Diagnosis
-  physicalExamNotes?: string | null;       // Khám thực thể 
-  assessment?: string | null;              // Đánh giá của bác sĩ
-  diagnosis?: string | null;          // Chẩn đoán
-  treatmentPlan?: string | null;           // Phác đồ điều trị
+  physicalExamNotes?: string | null;       
+  assessment?: string | null;              
+  diagnosis?: string | null;          
+  treatmentPlan?: string | null;           
   
   // ===== EXTENDED MEDICAL FIELDS =====
-  systemsReview?: string | null;           // Các bộ phận
-  initialDiagnosis?: string | null;        // Chẩn đoán ban đầu
-  treatmentGiven?: string | null;          // Đã xử lý
-  dischargeDiagnosis?: string | null;      // Chẩn đoán ra viện
+  systemsReview?: string | null;           
+  initialDiagnosis?: string | null;        
+  treatmentGiven?: string | null;          
+  dischargeDiagnosis?: string | null;      
   treatmentStartDate?: Date | null;
   treatmentEndDate?: Date | null;
   
   // ===== SUMMARY FIELDS =====
-  progressNotes?: string | null;           // Diễn biến
-  primaryDiagnosis?: string | null;        // Bệnh chính
-  secondaryDiagnosis?: string | null;      // Bệnh kèm theo
-  dischargeCondition?: string | null;      // Tình trạng ra viện
-  followUpInstructions?: string | null;    // Hướng điều trị tiếp theo
+  progressNotes?: string | null;           
+  primaryDiagnosis?: string | null;        
+  secondaryDiagnosis?: string | null;      
+  dischargeCondition?: string | null;      
+  followUpInstructions?: string | null;    
+  fullRecordSummary?: string | null;    
   
   // Imaging records (JSONB)
   imagingRecords?: {
@@ -165,6 +214,116 @@ export interface MedicalRecordExamination {
   updatedAt: string | Date;
 }
 
+export interface MedicalImageResponseDto {
+  id: string;
+  screeningId: string;
+  medicalRecordId?: string;
+  fileUrl: string;
+  thumbnailUrl?: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  width?: number;
+  height?: number;
+  dpi?: number;
+}
+
+/**
+ * AI Analysis Response DTO
+ */
+export interface AIAnalysisResponseDto {
+  id: string;
+  screeningId: string;
+  medicalImageId: string;
+  pulmoFileId: string;
+  diagnosisStatus: DiagnosisStatusEnum;
+  primaryDiagnosis?: Record<string, any>;
+  findings?: Array<Record<string, any>>;
+  grayZoneNotes?: Array<Record<string, any>>;
+  totalFindings?: number;
+  originalImageUrl?: string;
+  annotatedImageUrl?: string;
+  evaluatedImageUrl?: string;
+  rawPredictions?: Record<string, any>;
+  errorMessage?: string;
+  analyzedAt?: string;
+  createdAt: string;
+}
+
+/**
+ * Screening Conclusion Response DTO
+ */
+export interface ScreeningConclusionResponseDto {
+  id: string;
+  screeningId: string;
+  aiAnalysisId?: string;
+  medicalRecordId?: string;
+  patientId: string;
+  doctorId: string;
+  agreesWithAi: boolean;
+  decisionSource: DecisionSourceEnum;
+  doctorOverrideReason?: string;
+  reviewedAt?: string;
+  treatmentEndDate?: string;
+  pdfUrl?: string; 
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateMedicalRecordDto {
+  recordType?: string;
+  chiefComplaint?: string;
+  presentIllness?: string;
+  medicalHistory?: string;
+  surgicalHistory?: string;
+  familyHistory?: string;
+  physicalExamNotes?: string;
+  systemsReview?: string;
+  assessment?: string;
+  diagnosis?: string;
+  treatmentPlan?: string;
+  treatmentGiven?: string;
+  dischargeDiagnosis?: string;
+  treatmentStartDate?: string;
+  treatmentEndDate?: string;
+  progressNotes?: string;
+  primaryDiagnosis?: string;
+  secondaryDiagnosis?: string;
+  dischargeCondition?: string;
+  followUpInstructions?: string;
+  fullRecordSummary?: string;
+  allergies?: string[];
+  chronicDiseases?: string[];
+  currentMedications?: string[];
+  smokingStatus?: boolean;
+  smokingYears?: number;
+  alcoholConsumption?: boolean;
+}
+
+export interface ScreeningRequestResponseDto {
+  id: string;
+  patientId: string;
+  uploadedByDoctorId?: string;
+  screeningNumber: string;
+  screeningType?: ScreeningTypeEnum;
+  status: ScreeningStatusEnum;
+  priority: ScreeningPriorityEnum;
+  requestedAt?: string;
+  uploadedAt?: string;
+  aiStartedAt?: string;
+  aiCompletedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Relations
+  patient?: PatientResponse;
+  uploadedByDoctor?: Doctor;
+  images?: MedicalImageResponseDto[];
+  aiAnalyses?: AIAnalysisResponseDto[];
+  conclusions?: ScreeningConclusionResponseDto[];
+}
+
+
 export interface MedicalRecordDetailResponse {
   id: string;
   recordNumber: string;
@@ -184,23 +343,25 @@ export interface MedicalRecordDetailResponse {
     status: string;
     scheduledAt: string;
   };
+  
+  // Signing
   signedStatus: SignedStatusEnum;
   signedAt?: string;
   digitalSignature?: string;
-  recordType: string;
-  specialty?: string;
-  createdAt: string;
-  patientCategory?: string;
-  insuranceNumber?: string;
-  insuranceExpiry?: string;
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-  emergencyContactAddress?: string;
-  referralDiagnosis?: string;
-  chiefComplaint?: string;
+  
+  // Diagnosis
   diagnosis?: string;
+  recordType: string;
+  
+  // Chief Complaint & History
+  chiefComplaint?: string;
+  presentIllness?: string;
+  medicalHistory?: string;
+  familyHistory?: string;
+  surgicalHistory?: string;
+  
+  // Vital Signs
   vitalSigns: {
-    pulse?: number;
     temperature?: number;
     respiratoryRate?: number;
     weight?: number;
@@ -211,20 +372,23 @@ export interface MedicalRecordDetailResponse {
     spo2?: number;
     spO2?: number;
   };
-  presentIllness?: string;
-  medicalHistory?: string;
-  familyHistory?: string;
+  
+  // Physical Exam
   physicalExamNotes?: string;
   systemsReview?: string;
-  labSummary?: string;
-  initialDiagnosis?: string;
+  
+  // Treatment
   treatmentGiven?: string;
-  dischargeDiagnosis?: string;
+  treatmentPlan?: string;
   treatmentStartDate?: string;
   treatmentEndDate?: string;
-  primaryDiagnosis?: string;
-  secondaryDiagnosis?: string;
-  prescriptions: Array<{
+  
+  // Discharge
+  dischargeDiagnosis?: string;
+  dischargeCondition?: string;
+  
+  // Prescriptions (can be array of strings or full objects)
+  prescriptions: string[] | Array<{
     id: string;
     prescriptionNumber: string;
     items: Array<{
@@ -233,52 +397,50 @@ export interface MedicalRecordDetailResponse {
       unit: string;
       dosage: string;
       frequency: string;
-      duration: string;
+      durationDays: number;
+      instructions?: string;
+      startDate?: string;
+      endDate?: string;
     }>;
     notes?: string;
     createdAt: string;
   }>;
-  labResults: Array<{
-    id: string;
-    fileName: string;
-    fileUrl: string;
-    uploadedAt: string;
-  }>;
-  careLogs: Array<{
-    id: string;
-    createdDate: string;
-    createdTime: string;
-    weight?: number;
-    temperature?: number;
-    bloodPressure?: string;
-    heartRate?: number;
-    respiratoryRate?: number;
-    spo2?: number;
-    bmi?: number;
-  }>;
+  
+  // Progress & Assessment
   progressNotes?: string;
-  treatmentPlan?: string;
+  primaryDiagnosis?: string;
+  secondaryDiagnosis?: string;
+  assessment?: string;
   followUpInstructions?: string;
-  surgicalHistory?: string;
-  allergies?: string;
-  chronicDiseases?: string;
-  currentMedications?: string;
-  imagingRecords?: {
-    xray?: string;
-    ctScan?: string;
-    ultrasound?: string;
-    labTests?: string;
-    fullRecord?: string;
-  };
+  
+  // Patient Lifestyle (can be string or array)
+  allergies?: string | string[];
+  chronicDiseases?: string | string[];
+  currentMedications?: string | string[];
+  smokingStatus?: boolean;
+  smokingYears?: number;
+  alcoholConsumption?: boolean;
+  
+  // Status & Timestamps
   status: string;
+  createdAt: string;
   updatedAt: string;
+  
+  // PDF
+  pdfUrl?: string;
+
+  fullRecordSummary?: string;
+  
+  // Screening Requests (full structure)
+  screeningRequests?: ScreeningRequestResponseDto[];
 }
+
 
 /**
  * Update Medical Record DTO
  * Matches BE UpdateMedicalRecordDto exactly
  */
-export interface UpdateMedicalRecordDto {
+export interface UpdateMedicalRecordDtoForEncounter {
   chiefComplaint?: string;
   physicalExamNotes?: string;
   assessment?: string;

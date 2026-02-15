@@ -163,7 +163,7 @@ export interface Appointment {
   updatedAt?: string;
 }
 
-export interface UpdateMedicalRecordDto {
+export interface UpdateMedicalRecordDtoForEncounter {
   chiefComplaint?: string;
   presentIllness?: string;
   physicalExamNotes?: string;
