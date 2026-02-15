@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointment.service';
 import { medicalService } from '@/services/medical.service';
 import { format } from 'date-fns';
-import type { CreateVitalSignDto, MedicalRecord, Prescription, UpdateMedicalRecordDto, VitalSign } from '@/types/medical';
+import type { CreateVitalSignDto, MedicalRecord, Prescription, UpdateMedicalRecordDtoForEncounter, VitalSign } from '@/types/medical';
 import { toast } from 'sonner';
 
 const AUTO_SAVE_DEBOUNCE = 5000;
@@ -199,7 +199,7 @@ export function useEncounterLegacy(appointmentId: string) {
     }
   }, [encounterData, getCurrentFormSnapshot]);
 
-  const buildUpdateDto = useCallback((): UpdateMedicalRecordDto | null => {
+  const buildUpdateDto = useCallback((): UpdateMedicalRecordDtoForEncounter | null => {
     if (!medicalRecord) return null;
     return {
       chiefComplaint: medicalRecord.chiefComplaint ?? undefined,
@@ -240,8 +240,8 @@ export function useEncounterLegacy(appointmentId: string) {
   }, []);
   
   const saveMutation = useMutation({
-    mutationFn: async (dto: UpdateMedicalRecordDto) => {
-        return await medicalService.updateMedicalRecord(appointmentId, dto);
+    mutationFn: async (dto: UpdateMedicalRecordDtoForEncounter) => {
+        return await appointmentService.updateMedicalRecord(appointmentId, dto);
     },
     onSuccess: () => {
         lastSavedSnapshotRef.current = getCurrentFormSnapshot();

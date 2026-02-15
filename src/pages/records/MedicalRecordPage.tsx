@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useMyRecords } from '@/hooks/use-medical';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,14 +43,10 @@ export default function MedicalRecordPage() {
 
     return (
         <div className="flex flex-col h-full space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white border-b">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Hồ sơ bệnh án</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Các hồ sơ bệnh án gần đây do bạn khám.
-                    </p>
-                </div>
-            </div>
+            <PageHeader
+                title="Hồ sơ bệnh án"
+                subtitle="Các hồ sơ bệnh án gần đây do bạn khám."
+            />
 
             <div className="p-4 space-y-4">
                 <div className="flex items-center space-x-2 bg-white p-2 rounded-md border w-full max-w-md">

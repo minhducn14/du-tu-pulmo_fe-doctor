@@ -189,7 +189,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
             toast.success(editingPrescription ? 'Đã cập nhật toa thuốc' : 'Đã lưu toa thuốc');
             setEditingPrescription(null);
             queryClient.invalidateQueries({ queryKey: ['encounter', appointmentId] });
-            prescriptionEditorRef.current?.resetDirty();
+            prescriptionEditorRef.current?.reset();
         },
         onError: (error: any) => {
             console.error('Save prescription error:', error);
@@ -740,16 +740,6 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                                         </Select>
                                     </Field>
 
-                                    <div className="md:col-span-2">
-                                        <Field label="Nghề nghiệp / Yếu tố nguy cơ">
-                                            <Input
-                                                value={medicalRecord?.occupation || ''}
-                                                onChange={(e) => onUpdateRecord('occupation', e.target.value)}
-                                                disabled={!canEdit}
-                                                placeholder="VD: Công nhân mỏ than..."
-                                            />
-                                        </Field>
-                                    </div>
                                 </div>
                             </Section>
                         </div>
