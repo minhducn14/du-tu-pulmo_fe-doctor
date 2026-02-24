@@ -20,7 +20,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Pill, User, Calendar, ExternalLink } from 'lucide-react';
+import { Search, Pill, User, Calendar, ExternalLink, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -134,9 +134,21 @@ export default function PrescriptionPage() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                <Button variant="ghost" size="icon">
-                                                    <ExternalLink className="w-4 h-4 text-slate-400" />
-                                                </Button>
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.open(`/api/medical/prescriptions/${prescription.id}/pdf`, '_blank'); // Temporary fallback, better use medicalService
+                                                        }}
+                                                    >
+                                                        <Printer className="w-4 h-4 text-blue-500" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon">
+                                                        <ExternalLink className="w-4 h-4 text-slate-400" />
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))

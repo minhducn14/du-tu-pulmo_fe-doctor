@@ -210,8 +210,6 @@ export const medicalService = {
       formData.append('medicalRecordId', medicalRecordId);
     }
     
-    // Note: The original code had /screenings/workflow/xray-analyze.
-    // Ensure this endpoint matches the BE.
     const response = await api.post<UploadAnalyzeResponse>(`/screenings/workflow/xray-analyze`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -235,11 +233,34 @@ export const medicalService = {
   },
 
   /**
-   * Download/Generate PDF for a medical record
-   * @roles DOCTOR (own), PATIENT (own), ADMIN
+   * Cập nhật API lấy URL PDF bệnh án
    */
-  downloadPdf: async (recordId: string): Promise<{ url: string }> => {
-    const response = await api.get<{ url: string }>(`/medical/records/${recordId}/pdf`);
+  getMedicalRecordPdfUrl: async (recordId: string): Promise<{ pdfUrl: string | null }> => {
+    const response = await api.get<{ pdfUrl: string | null }>(`/medical/records/${recordId}/pdf`);
+    return response.data;
+  },
+
+  /**
+   * Tạo file PDF bệnh án mới
+   */
+  generateMedicalRecordPdf: async (recordId: string): Promise<{ pdfUrl: string }> => {
+    const response = await api.post<{ pdfUrl: string }>(`/medical/records/${recordId}/pdf`);
+    return response.data;
+  },
+
+  /**
+   * Lấy URL PDF đơn thuốc
+   */
+  getPrescriptionPdfUrl: async (prescriptionId: string): Promise<{ pdfUrl: string | null }> => {
+    const response = await api.get<{ pdfUrl: string | null }>(`/medical/prescriptions/${prescriptionId}/pdf`);
+    return response.data;
+  },
+
+  /**
+   * Tạo file PDF đơn thuốc mới
+   */
+  generatePrescriptionPdf: async (prescriptionId: string): Promise<{ pdfUrl: string }> => {
+    const response = await api.post<{ pdfUrl: string }>(`/medical/prescriptions/${prescriptionId}/pdf`);
     return response.data;
   },
 

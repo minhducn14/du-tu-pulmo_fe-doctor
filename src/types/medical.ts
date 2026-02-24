@@ -387,7 +387,7 @@ export interface MedicalRecordDetailResponse {
   dischargeDiagnosis?: string;
   dischargeCondition?: string;
   
-  // Prescriptions (can be array of strings or full objects)
+  // Prescriptions
   prescriptions: string[] | Array<{
     id: string;
     prescriptionNumber: string;
@@ -403,6 +403,8 @@ export interface MedicalRecordDetailResponse {
       endDate?: string;
     }>;
     notes?: string;
+    pdfUrl?: string;
+    instructions?: string;
     createdAt: string;
   }>;
   
@@ -544,6 +546,7 @@ export interface Prescription {
   diagnosis?: string;
   notes?: string;
   status?: string;
+  pdfUrl?: string;
   items: PrescriptionItem[];
   createdAt: string;
   medicalRecord?: {
