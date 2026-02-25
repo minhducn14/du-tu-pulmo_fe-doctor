@@ -214,7 +214,7 @@ export interface AppointmentQuery {
 }
 
 export interface PaginatedAppointment {
-    data: Appointment[];
+    items: Appointment[];
     meta: {
         currentPage: number;
         itemsPerPage: number;

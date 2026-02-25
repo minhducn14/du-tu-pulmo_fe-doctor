@@ -80,7 +80,6 @@ export const AppointmentListPage = () => {
     };
 
     const { data, isLoading } = useGetMyAppointmentsAsDoctor(queryParams);
-
     const totalPages = data?.meta?.totalPages ?? 1;
 
     return (
@@ -154,7 +153,7 @@ export const AppointmentListPage = () => {
                                         ))}
                                     </TableRow>
                                 ))
-                            ) : !data?.data?.length ? (
+                            ) : !data?.items?.length ? (
                                 <TableRow>
                                     <TableCell colSpan={7} className="text-center py-12 text-gray-400">
                                         <Calendar className="h-10 w-10 mx-auto mb-2 opacity-40" />
@@ -162,7 +161,7 @@ export const AppointmentListPage = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                data.data.map((appt) => (
+                                data.items.map((appt) => (
                                     <TableRow
                                         key={appt.id}
                                         className="cursor-pointer hover:bg-gray-50"

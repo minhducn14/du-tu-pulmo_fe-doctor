@@ -230,14 +230,14 @@ export const PatientDetailPage = () => {
                             <div className="space-y-3">
                                 {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
                             </div>
-                        ) : !appointments?.data?.length ? (
+                        ) : !appointments?.items?.length ? (
                             <div className="text-center py-12 text-gray-400">
                                 <Stethoscope className="h-10 w-10 mx-auto mb-2 opacity-40" />
                                 <p>Chưa có lịch hẹn nào</p>
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {appointments.data.map((appt) => (
+                                {appointments.items.map((appt) => (
                                     <div
                                         key={appt.id}
                                         className="p-4 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors cursor-pointer"
