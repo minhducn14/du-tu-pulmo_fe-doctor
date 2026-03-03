@@ -25,3 +25,16 @@ export function useLogout() {
         mutationFn: () => authService.logout(),
     });
 }
+
+export function useForgotPasswordOtp() {
+    return useMutation({
+        mutationFn: (email: string) => authService.forgotPasswordOtp(email),
+    });
+}
+
+export function useResetPasswordOtp() {
+    return useMutation({
+        mutationFn: (payload: { email: string; otp: string; newPassword: string }) =>
+            authService.resetPasswordOtp(payload.email, payload.otp, payload.newPassword),
+    });
+}
