@@ -1,18 +1,18 @@
 export type ScreeningType = 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'OTHER';
-
 export type ScreeningStatus =
-  | 'REQUESTED'
   | 'UPLOADED'
-  | 'ASSIGNED'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
+  | 'PENDING_AI'
+  | 'AI_PROCESSING'
+  | 'AI_COMPLETED'
+  | 'AI_FAILED'
+  | 'PENDING_DOCTOR'
+  | 'DOCTOR_REVIEWING'
+  | 'DOCTOR_COMPLETED'
   | 'CANCELLED';
-
 export type ScreeningPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-
 export type AiDiagnosisStatus = 'DETECTED' | 'UNCERTAIN' | 'ERROR' | 'PENDING';
-
 export type AiRiskLevel = 'Critical' | 'High' | 'Warning' | 'Normal' | 'Benign';
+export type DecisionSource = 'AI_ONLY' | 'DOCTOR_ONLY' | 'DOCTOR_REVIEWED_AI';
 
 export interface AiBoundingBox {
   x1: number;
@@ -26,8 +26,8 @@ export interface AiFinding {
   name_vn: string;
   probability: number;
   risk_level: AiRiskLevel;
-  confidence_level: string;
-  recommendation: string;
+  confidence_level?: string;
+  recommendation?: string;
   bbox?: AiBoundingBox;
 }
 
@@ -36,8 +36,8 @@ export interface AiPrimaryDiagnosis {
   name_vn: string;
   risk_level: AiRiskLevel;
   confidence_level?: string;
-  recommendation: string;
-  color: string;
+  recommendation?: string;
+  color?: string;
   probability?: number;
 }
 
@@ -53,9 +53,6 @@ export interface AiAnalysisResponse {
   id: string;
   screeningId: string;
   medicalImageId: string;
-  modelName: string;
-  modelVersion: string;
-  modelType?: string;
   pulmoFileId?: string;
   diagnosisStatus: AiDiagnosisStatus;
   primaryDiagnosis?: AiPrimaryDiagnosis;
@@ -65,27 +62,7 @@ export interface AiAnalysisResponse {
   originalImageUrl?: string;
   annotatedImageUrl?: string;
   evaluatedImageUrl?: string;
-  predictedCondition?: string;
-  confidenceScore?: number;
-  alternativePredictions?: { condition: string; score: number }[];
-  heatmapUrl?: string;
-  gradcamUrl?: string;
-  detectionBoxes?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    label: string;
-    confidence: number;
-  }[];
-  segmentationMaskUrl?: string;
-  processingTimeMs?: number;
-  gpuUsed?: string;
-  memoryUsedMb?: number;
-  imageQualityPassed: boolean;
-  qualityIssues?: string[];
   rawPredictions?: Record<string, unknown>;
-  featureImportance?: Record<string, number>;
   errorMessage?: string;
   analyzedAt: string;
   createdAt: string;
@@ -105,6 +82,21 @@ export interface MedicalImageResponse {
   dpi?: number;
 }
 
+export interface ScreeningConclusionResponse {
+  id: string;
+  screeningId?: string;
+  aiAnalysisId?: string;
+  medicalRecordId?: string;
+  patientId: string;
+  doctorId?: string;
+  agreesWithAi?: boolean;
+  decisionSource?: DecisionSource;
+  doctorOverrideReason?: string;
+  reviewedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ScreeningRequestResponse {
   id: string;
   patientId: string;
@@ -113,27 +105,47 @@ export interface ScreeningRequestResponse {
   screeningType: ScreeningType;
   status: ScreeningStatus;
   priority: ScreeningPriority;
-  assignedDoctorId?: string;
-  reassignCount: number;
-  reassignHistory?: { doctorId: string; reason: string; at: string }[];
   requestedAt?: string;
   uploadedAt?: string;
   aiStartedAt?: string;
   aiCompletedAt?: string;
-  doctorAssignedAt?: string;
-  doctorCompletedAt?: string;
-  cancelledAt?: string;
-  cancellationReason?: string;
-  cancelledBy?: string;
-  source?: string;
-  deviceInfo?: Record<string, unknown>;
-  aiModelVersion?: string;
   createdAt: string;
   updatedAt: string;
+  images?: MedicalImageResponse[];
+  aiAnalyses?: AiAnalysisResponse[];
+  conclusions?: ScreeningConclusionResponse[];
 }
 
 export interface UploadAnalyzeResponse {
   screening: ScreeningRequestResponse;
   image: MedicalImageResponse;
   analysis: AiAnalysisResponse;
+}
+
+export interface GetScreeningsQuery {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  order?: 'ASC' | 'DESC';
+  status?: ScreeningStatus;
+  screeningType?: ScreeningType;
+  patientId?: string;
+}
+
+export interface PaginatedScreenings {
+  items: ScreeningRequestResponse[];
+  meta: {
+    currentPage: number;
+    itemsPerPage: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface CreateConclusionDto {
+  agreesWithAi?: boolean;
+  decisionSource: DecisionSource;
+  doctorOverrideReason?: string;
 }

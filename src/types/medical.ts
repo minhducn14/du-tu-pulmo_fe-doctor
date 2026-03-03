@@ -1,5 +1,6 @@
 import type { Appointment, Doctor, Patient } from "@/types/appointment";
 import type { PatientResponse } from "./patient";
+import type { AiGrayZoneNote, AiPrimaryDiagnosis } from "./screening";
 
 // ============================================================================
 // ENUMS - Match BE enums exactly
@@ -237,9 +238,9 @@ export interface AIAnalysisResponseDto {
   medicalImageId: string;
   pulmoFileId: string;
   diagnosisStatus: DiagnosisStatusEnum;
-  primaryDiagnosis?: Record<string, any>;
-  findings?: Array<Record<string, any>>;
-  grayZoneNotes?: Array<Record<string, any>>;
+  primaryDiagnosis?: AiPrimaryDiagnosis;
+  findings?: AiPrimaryDiagnosis[];
+  grayZoneNotes?: AiGrayZoneNote[];
   totalFindings?: number;
   originalImageUrl?: string;
   annotatedImageUrl?: string;
@@ -711,6 +712,14 @@ export const AIRiskLevel = {
   NORMAL: 'NORMAL',        // ✅ No abnormalities detected
 } as const;
 export type AIRiskLevel = typeof AIRiskLevel[keyof typeof AIRiskLevel];
+
+export const AIRiskColorMap: Record<AIRiskLevel, string> = {
+  CRITICAL: 'bg-red-100 border-red-400 text-red-700',
+  HIGH: 'bg-orange-100 border-orange-400 text-orange-700',
+  WARNING: 'bg-yellow-100 border-yellow-400 text-yellow-700',
+  BENIGN: 'bg-green-100 border-green-400 text-green-700',
+  NORMAL: 'bg-blue-100 border-blue-400 text-blue-700',
+};
 
 export const AIDiagnosisStatus = {
   NORMAL: 'NORMAL',
