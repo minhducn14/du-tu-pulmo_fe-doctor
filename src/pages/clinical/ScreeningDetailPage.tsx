@@ -128,7 +128,7 @@ export default function ScreeningDetailPage() {
 
           {!isEditing && (
             <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
-              Sửa kết luận
+              {conclusions?.length === 0 ? 'Thêm kết luận' : 'Sửa kết luận'}
             </Button>
           )}
         </CardHeader>

@@ -7,7 +7,20 @@ import { medicalService } from '@/services/medical.service';
 import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { toast } from 'sonner';
-import type { UpdateMedicalRecordDto } from '@/types/medical';
+import {
+    MedicalRecordStatusEnum,
+    type UpdateMedicalRecordDto,
+} from '@/types/medical';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function MedicalRecordDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -15,8 +28,10 @@ export default function MedicalRecordDetailPage() {
     const queryClient = useQueryClient();
 
     const [activeTab, setActiveTab] = useState('medical-record');
-    const [selectedPrescription, setSelectedPrescription] = useState<any>(null);
+    const [selectedPrescription, setSelectedPrescription] = useState<{ id?: string; pdfUrl?: string } | null>(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+    const [isConfirmCloseOpen, setIsConfirmCloseOpen] = useState(false);
 
     const { data: record, isLoading, error } = useQuery({
         queryKey: ['medical-record', id],
@@ -33,6 +48,8 @@ export default function MedicalRecordDetailPage() {
         signedStatus: record.signedStatus === 'SIGNED' ? 'Đã ký' : 'Chưa ký',
     } : null;
 
+    const isRecordClosed = record?.status === MedicalRecordStatusEnum.COMPLETED;
+
     // Form State
     const [formData, setFormData] = useState<UpdateMedicalRecordDto & {
         recordType: string;
@@ -44,7 +61,6 @@ export default function MedicalRecordDetailPage() {
         secondaryDiagnosis: string;
         dischargeCondition: string;
         fullRecordSummary: string;
-        isRecordClosed: boolean;
         isDigitallySigned: boolean;
         systemsReview: string;
     }>({
@@ -75,7 +91,6 @@ export default function MedicalRecordDetailPage() {
         secondaryDiagnosis: record?.secondaryDiagnosis || "",
         dischargeCondition: record?.dischargeCondition || "",
         fullRecordSummary: record?.fullRecordSummary || "",
-        isRecordClosed: false,
         isDigitallySigned: false,
     });
 
@@ -142,11 +157,17 @@ export default function MedicalRecordDetailPage() {
 
                 // ===== TRẠNG THÁI =====
                 isDigitallySigned: record.signedStatus === 'SIGNED',
-
-
             }));
+            setIsDirty(false);
         }
     }, [record]);
+
+    const extractErrorMessage = (error: unknown, fallback: string): string => {
+        const err = error as { message?: string | string[] };
+        if (Array.isArray(err?.message)) return err.message.join(', ');
+        if (typeof err?.message === 'string' && err.message.trim()) return err.message;
+        return fallback;
+    };
 
     const updateMutation = useMutation({
         mutationFn: (data: UpdateMedicalRecordDto) => {
@@ -154,11 +175,41 @@ export default function MedicalRecordDetailPage() {
         },
         onSuccess: () => {
             toast.success('Lưu bệnh án thành công');
+            setIsDirty(false);
             queryClient.invalidateQueries({ queryKey: ['medical-record', id] });
         },
-        onError: (error) => {
-            console.error(error);
-            toast.error('Lỗi khi lưu bệnh án');
+        onError: (err) => {
+            console.error(err);
+            toast.error(extractErrorMessage(err, 'Lỗi khi lưu bệnh án'));
+        },
+    });
+
+    const completeRecordMutation = useMutation({
+        mutationFn: () => medicalService.completeMedicalRecord(id!),
+        onSuccess: () => {
+            toast.success('Đã đóng bệnh án');
+            queryClient.invalidateQueries({ queryKey: ['medical-record', id] });
+        },
+        onError: (err) => {
+            console.error(err);
+            toast.error(extractErrorMessage(err, 'Không thể đóng bệnh án'));
+        },
+    });
+
+    const reopenRecordMutation = useMutation({
+        mutationFn: () => medicalService.reopenMedicalRecord(id!),
+        onSuccess: () => {
+            toast.success('Đã mở lại bệnh án');
+            queryClient.invalidateQueries({ queryKey: ['medical-record', id] });
+        },
+        onError: (err) => {
+            console.error(err);
+            const msg = extractErrorMessage(err, '');
+            if (msg.includes('REOPEN_WINDOW_EXPIRED') || msg.includes('REOPEN_FORBIDDEN')) {
+                toast.error('Đã quá thời hạn mở lại. Vui lòng liên hệ Admin.');
+            } else {
+                toast.error(msg || 'Không thể mở lại bệnh án');
+            }
         },
     });
 
@@ -171,20 +222,19 @@ export default function MedicalRecordDetailPage() {
             toast.success('Ký số thành công');
             queryClient.invalidateQueries({ queryKey: ['medical-record', id] });
         },
-        onError: (error) => {
-            console.error(error);
-            toast.error('Lỗi khi ký số');
+        onError: (err) => {
+            console.error(err);
+            toast.error(extractErrorMessage(err, 'Lỗi khi ký số'));
         },
     });
 
     const handleInputChange = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        setIsDirty(true);
     };
 
-    const handleSave = () => {
-        if (!record) return;
-
-        const updateDto: UpdateMedicalRecordDto = {
+    const buildUpdateDto = (): UpdateMedicalRecordDto => {
+        return {
             recordType: formData.recordType,
             chiefComplaint: formData.chiefComplaint,
             presentIllness: formData.presentIllness,
@@ -205,7 +255,6 @@ export default function MedicalRecordDetailPage() {
             diagnosis: formData.diagnosis,
             treatmentPlan: formData.treatmentPlan,
             treatmentGiven: formData.treatmentGiven,
-
             ...(formData.treatmentStartDate && { treatmentStartDate: formData.treatmentStartDate }),
             ...(formData.treatmentEndDate && { treatmentEndDate: formData.treatmentEndDate }),
             ...(formData.dischargeDiagnosis && { dischargeDiagnosis: formData.dischargeDiagnosis }),
@@ -216,8 +265,16 @@ export default function MedicalRecordDetailPage() {
             secondaryDiagnosis: formData.secondaryDiagnosis,
             dischargeCondition: formData.dischargeCondition,
         };
+    };
 
-        updateMutation.mutate(updateDto);
+    const handleSave = async (): Promise<boolean> => {
+        if (!record || isRecordClosed) return false;
+        try {
+            await updateMutation.mutateAsync(buildUpdateDto());
+            return true;
+        } catch {
+            return false;
+        }
     };
 
     const handleSign = () => {
@@ -225,6 +282,29 @@ export default function MedicalRecordDetailPage() {
         if (confirm('Bạn có chắc chắn muốn ký số bệnh án này? Hành động này không thể hoàn tác.')) {
             signMutation.mutate();
         }
+    };
+
+    const handleToggleRecordClosed = async (nextClosed: boolean) => {
+        if (!record || !id) return;
+        if (nextClosed === isRecordClosed) return;
+
+        if (nextClosed) {
+            // Mở dialog xác nhận thay vì lưu/đóng ngay
+            setIsConfirmCloseOpen(true);
+            return;
+        }
+
+        // Mở lại bệnh án thì gọi api ngay
+        await reopenRecordMutation.mutateAsync();
+    };
+
+    const executeCloseRecord = async () => {
+        if (!record || !id) return;
+        if (isDirty) {
+            const saved = await handleSave();
+            if (!saved) return;
+        }
+        await completeRecordMutation.mutateAsync();
     };
 
     const handlePrintRecord = async () => {
@@ -236,7 +316,7 @@ export default function MedicalRecordDetailPage() {
             } else {
                 toast.error('Không tìm thấy link PDF');
             }
-        } catch (error) {
+        } catch {
             toast.error('Không thể tạo file in bệnh án');
         }
     };
@@ -246,17 +326,16 @@ export default function MedicalRecordDetailPage() {
         try {
             const { pdfUrl } = await medicalService.generatePrescriptionPdf(prescriptionId);
             if (pdfUrl) {
-                setSelectedPrescription((prev: any) => ({ ...prev, pdfUrl }));
+                setSelectedPrescription((prev) => prev ? ({ ...prev, pdfUrl }) : { pdfUrl });
                 toast.success('Đã tạo bản in PDF thành công');
                 queryClient.invalidateQueries({ queryKey: ['medical-record', id] });
             }
-        } catch (error) {
+        } catch {
             toast.error('Không thể tạo file PDF');
         } finally {
             setIsGeneratingPdf(false);
         }
     };
-
 
     const tabs = [
         { id: 'medical-record', label: 'Bệnh án' },
@@ -272,6 +351,9 @@ export default function MedicalRecordDetailPage() {
     if (error || !record) {
         return <div className="p-8 text-center">Không tìm thấy bệnh án. <Button variant="link" onClick={() => navigate(-1)}>Quay lại</Button></div>;
     }
+
+    const isTogglePending = completeRecordMutation.isPending || reopenRecordMutation.isPending;
+    const isFormDisabled = isRecordClosed || updateMutation.isPending || isTogglePending;
 
     return (
         <div className="h-full overflow-hidden flex flex-col bg-gray-50">
@@ -294,38 +376,40 @@ export default function MedicalRecordDetailPage() {
 
                     {/* Left Column */}
                     <ResizablePanel defaultSize={50} minSize={30} className="bg-white rounded-lg shadow-sm border border-gray-200 h-full overflow-hidden flex flex-col">
-                        {/* Patient Info (Compact) */}
+
+                        {/* Patient Info */}
                         <div className="px-6 pb-2 pt-4 border-b border-gray-100 flex-shrink-0">
                             <div className="grid grid-cols-3 gap-y-4 gap-x-6">
                                 <div>
                                     <p className="text-xs text-gray-500 mb-0.5">Họ và tên</p>
-                                    <p className="text-sm font-medium text-gray-900">
-                                        {patientInfo?.fullName}
-                                    </p>
+                                    <p className="text-sm font-medium text-gray-900">{patientInfo?.fullName}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 mb-0.5">Giới tính</p>
-                                    <p className="text-sm font-medium text-gray-900">
-                                        {patientInfo?.gender}
-                                    </p>
+                                    <p className="text-sm font-medium text-gray-900">{patientInfo?.gender}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 mb-0.5">Ngày sinh</p>
-                                    <p className="text-sm font-medium text-gray-900">
-                                        {patientInfo?.dateOfBirth}
-                                    </p>
+                                    <p className="text-sm font-medium text-gray-900">{patientInfo?.dateOfBirth}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 mb-0.5">Mã bệnh án</p>
-                                    <p className="text-sm font-medium text-gray-900">
-                                        {patientInfo?.recordNumber}
-                                    </p>
+                                    <p className="text-sm font-medium text-gray-900">{patientInfo?.recordNumber}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 mb-0.5">Mã phiếu khám</p>
-                                    <p className="text-sm font-medium text-gray-900">
-                                        {patientInfo?.appointmentCode}
-                                    </p>
+                                    <p className="text-sm font-medium text-gray-900">{patientInfo?.appointmentCode}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500 mb-0.5">Trạng thái bệnh án</p>
+                                    <span
+                                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${isRecordClosed
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                    >
+                                        {isRecordClosed ? 'Đã đóng' : 'Đang xử lý'}
+                                    </span>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 mb-0.5">Trạng thái ký số</p>
@@ -362,7 +446,7 @@ export default function MedicalRecordDetailPage() {
 
                             {/* TAB: BỆNH ÁN */}
                             {activeTab === 'medical-record' && (
-                                <div className="space-y-6">
+                                <fieldset disabled={isFormDisabled} className="space-y-6">
                                     {/* Thông tin hành chính */}
                                     <section>
                                         <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
@@ -430,7 +514,7 @@ export default function MedicalRecordDetailPage() {
                                         </div>
                                     </section>
 
-                                    {/* Chỉ số sinh hiệu (Read-only/Display from record.vitalSigns) */}
+                                    {/* Chỉ số sinh hiệu */}
                                     <section>
                                         <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
                                             Chỉ số sinh hiệu (Ghi nhận gần nhất)
@@ -474,9 +558,7 @@ export default function MedicalRecordDetailPage() {
                                         </h3>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Dị ứng
-                                                </label>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Dị ứng</label>
                                                 <textarea
                                                     value={Array.isArray(formData.allergies) ? formData.allergies.join('\n') : (formData.allergies || '')}
                                                     onChange={(e) => handleInputChange('allergies', e.target.value.split('\n'))}
@@ -616,9 +698,7 @@ export default function MedicalRecordDetailPage() {
                                         </h3>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Chẩn đoán
-                                                </label>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Chẩn đoán</label>
                                                 <textarea
                                                     value={formData.diagnosis || ''}
                                                     onChange={(e) => handleInputChange('diagnosis', e.target.value)}
@@ -628,9 +708,7 @@ export default function MedicalRecordDetailPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Phác đồ điều trị
-                                                </label>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Phác đồ điều trị</label>
                                                 <textarea
                                                     value={formData.treatmentPlan || ''}
                                                     onChange={(e) => handleInputChange('treatmentPlan', e.target.value)}
@@ -664,9 +742,7 @@ export default function MedicalRecordDetailPage() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                        Đến ngày
-                                                    </label>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
                                                     <input
                                                         type="date"
                                                         value={formData.treatmentEndDate || ''}
@@ -677,14 +753,13 @@ export default function MedicalRecordDetailPage() {
                                             </div>
                                         </div>
                                     </section>
-                                </div>
+                                </fieldset>
                             )}
 
                             {/* TAB: PHIẾU ĐIỀU TRỊ */}
                             {activeTab === 'prescription' && (
                                 <div className="space-y-4">
                                     <h3 className="text-base font-semibold text-gray-900 mb-4">Danh sách toa thuốc</h3>
-
                                     {record.prescriptions && Array.isArray(record.prescriptions) && record.prescriptions.length > 0 ? (
                                         record.prescriptions.map((prescription) => (
                                             typeof prescription === 'object' && prescription !== null ? (
@@ -725,12 +800,14 @@ export default function MedicalRecordDetailPage() {
 
                             {/* TAB: TỔNG KẾT BỆNH ÁN */}
                             {activeTab === 'discharge-summary' && (
+                                // Toggle "Đóng bệnh án" và "Ký số" được tách ra ngoài fieldset
+                                // để bác sĩ luôn tương tác được dù form đang disabled
                                 <div className="space-y-6">
-                                    <section>
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                                            Tóm tắt điều trị
-                                        </h3>
-                                        <div className="space-y-4">
+                                    <fieldset disabled={isFormDisabled} className="space-y-6">
+                                        <section>
+                                            <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                                                Tóm tắt điều trị
+                                            </h3>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                                     Quá trình bệnh lý & diễn biến lâm sàng
@@ -743,103 +820,94 @@ export default function MedicalRecordDetailPage() {
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                                                 />
                                             </div>
-                                        </div>
-                                    </section>
+                                        </section>
 
-                                    <section>
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                                            Chẩn đoán ra viện
-                                        </h3>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Bệnh chính
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.primaryDiagnosis || ''}
-                                                    onChange={(e) => handleInputChange('primaryDiagnosis', e.target.value)}
-                                                    placeholder="Nhập chẩn đoán bệnh chính..."
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                                                />
+                                        <section>
+                                            <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                                                Chẩn đoán ra viện
+                                            </h3>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Bệnh chính</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.primaryDiagnosis || ''}
+                                                        onChange={(e) => handleInputChange('primaryDiagnosis', e.target.value)}
+                                                        placeholder="Nhập chẩn đoán bệnh chính..."
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Bệnh kèm theo</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.secondaryDiagnosis || ''}
+                                                        onChange={(e) => handleInputChange('secondaryDiagnosis', e.target.value)}
+                                                        placeholder="Tìm kiếm và thêm bệnh kèm theo..."
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Chẩn đoán tổng kết</label>
+                                                    <textarea
+                                                        value={formData.dischargeDiagnosis || ''}
+                                                        onChange={(e) => handleInputChange('dischargeDiagnosis', e.target.value)}
+                                                        rows={3}
+                                                        placeholder="Nhập chẩn đoán tổng kết khi ra viện..."
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Bệnh kèm theo
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.secondaryDiagnosis || ''}
-                                                    onChange={(e) => handleInputChange('secondaryDiagnosis', e.target.value)}
-                                                    placeholder="Tìm kiếm và thêm bệnh kèm theo..."
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                                                />
-                                            </div>
+                                        </section>
 
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Chẩn đoán tổng kết
-                                                </label>
-                                                <textarea
-                                                    value={formData.dischargeDiagnosis || ''}
-                                                    onChange={(e) => handleInputChange('dischargeDiagnosis', e.target.value)}
-                                                    rows={3}
-                                                    placeholder="Nhập chẩn đoán tổng kết khi ra viện..."
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                                                />
-                                            </div>
-                                        </div>
-                                    </section>
+                                        <section>
+                                            <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                                                Phương pháp điều trị
+                                            </h3>
+                                            <textarea
+                                                value={formData.treatmentGiven || ''}
+                                                onChange={(e) => handleInputChange('treatmentGiven', e.target.value)}
+                                                rows={4}
+                                                placeholder="Nhập thông tin..."
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </section>
 
-                                    <section>
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                                            Phương pháp điều trị
-                                        </h3>
-                                        <textarea
-                                            value={formData.treatmentGiven || ''}
-                                            onChange={(e) => handleInputChange('treatmentGiven', e.target.value)}
-                                            rows={4}
-                                            placeholder="Nhập thông tin..."
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </section>
+                                        <section>
+                                            <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                                                Tình trạng người ra viện
+                                            </h3>
+                                            <select
+                                                value={formData.dischargeCondition || ''}
+                                                onChange={(e) => handleInputChange('dischargeCondition', e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="">Chọn tình trạng...</option>
+                                                <option value="improved">Khỏi bệnh</option>
+                                                <option value="stable">Đỡ, cần tiếp tục điều trị</option>
+                                                <option value="unchanged">Không thay đổi</option>
+                                                <option value="worsened">Nặng hơn</option>
+                                                <option value="deceased">Tử vong</option>
+                                            </select>
+                                        </section>
 
-                                    <section>
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                                            Tình trạng người ra viện
-                                        </h3>
-                                        <select
-                                            value={formData.dischargeCondition || ''}
-                                            onChange={(e) => handleInputChange('dischargeCondition', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Chọn tình trạng...</option>
-                                            <option value="improved">Khỏi bệnh</option>
-                                            <option value="stable">Đỡ, cần tiếp tục điều trị</option>
-                                            <option value="unchanged">Không thay đổi</option>
-                                            <option value="worsened">Nặng hơn</option>
-                                            <option value="deceased">Tử vong</option>
-                                        </select>
-                                    </section>
+                                        <section>
+                                            <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                                                Hướng dẫn tái khám
+                                            </h3>
+                                            <textarea
+                                                value={formData.followUpInstructions || ''}
+                                                onChange={(e) => handleInputChange('followUpInstructions', e.target.value)}
+                                                rows={3}
+                                                placeholder="Nhập hướng dẫn tái khám..."
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </section>
 
-                                    <section>
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                                            Hướng dẫn tái khám
-                                        </h3>
-                                        <textarea
-                                            value={formData.followUpInstructions || ''}
-                                            onChange={(e) => handleInputChange('followUpInstructions', e.target.value)}
-                                            rows={3}
-                                            placeholder="Nhập hướng dẫn tái khám..."
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </section>
-
-                                    <section>
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                                            Toàn bộ hồ sơ
-                                        </h3>
-                                        <div className="space-y-4">
+                                        <section>
+                                            <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                                                Toàn bộ hồ sơ
+                                            </h3>
                                             <textarea
                                                 value={formData.fullRecordSummary || ''}
                                                 onChange={(e) => handleInputChange('fullRecordSummary', e.target.value)}
@@ -847,59 +915,67 @@ export default function MedicalRecordDetailPage() {
                                                 placeholder="Nhập thông tin..."
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                                             />
+                                        </section>
+                                    </fieldset>
 
-                                            <div className="flex items-center gap-8 pt-2">
-                                                <label className="flex items-center gap-3 cursor-pointer">
-                                                    <span className="text-sm font-medium text-gray-700">Đóng bệnh án</span>
-                                                    <div className="relative">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={formData.isRecordClosed}
-                                                            onChange={(e) => handleInputChange('isRecordClosed', e.target.checked)}
-                                                            className="sr-only peer"
-                                                        />
-                                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                                    </div>
-                                                </label>
-
-                                                <Button
-                                                    variant="ghost"
-                                                    className="flex items-center gap-3 cursor-pointer hover:bg-transparent p-0"
-                                                    onClick={handleSign}
-                                                    disabled={record.signedStatus === 'SIGNED' || signMutation.isPending}
-                                                >
-                                                    <span className="text-sm font-medium text-gray-700">Ký số</span>
-                                                    <div className="relative">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={record.signedStatus === 'SIGNED'}
-                                                            readOnly
-                                                            className="sr-only peer"
-                                                        />
-                                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                                    </div>
-                                                </Button>
+                                    {/* Toggle Đóng bệnh án + Ký số — nằm NGOÀI fieldset để luôn clickable */}
+                                    <div className="flex items-center gap-8 pt-2">
+                                        <label className="flex items-center gap-3 cursor-pointer">
+                                            <span className="text-sm font-medium text-gray-700">Đóng bệnh án</span>
+                                            <div className="relative">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isRecordClosed}
+                                                    onChange={(e) => void handleToggleRecordClosed(e.target.checked)}
+                                                    disabled={isTogglePending}
+                                                    className="sr-only peer"
+                                                />
+                                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                             </div>
-                                        </div>
-                                    </section>
+                                        </label>
+
+                                        <Button
+                                            variant="ghost"
+                                            className="flex items-center gap-3 cursor-pointer hover:bg-transparent p-0"
+                                            onClick={handleSign}
+                                            disabled={record.signedStatus === 'SIGNED' || signMutation.isPending}
+                                        >
+                                            <span className="text-sm font-medium text-gray-700">Ký số</span>
+                                            <div className="relative">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={record.signedStatus === 'SIGNED'}
+                                                    readOnly
+                                                    className="sr-only peer"
+                                                />
+                                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </div>
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
                         </div>
 
                         {/* Pinned Action Bar */}
                         <div className="px-6 py-3 border-t border-gray-200 bg-white flex items-center justify-end gap-3 shrink-0">
-                            <button onClick={handlePrintRecord} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                            <button
+                                onClick={handlePrintRecord}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                            >
                                 <Download className="w-4 h-4" />
                                 Tải bệnh án
                             </button>
-                            <button onClick={handlePrintRecord} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                            <button
+                                onClick={handlePrintRecord}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                            >
                                 <Printer className="w-4 h-4" />
                                 In bệnh án
                             </button>
                             <button
-                                onClick={handleSave}
-                                disabled={updateMutation.isPending}
-                                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors disabled:opacity-50"
+                                onClick={() => void handleSave()}
+                                disabled={isFormDisabled}
+                                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {updateMutation.isPending ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -929,7 +1005,7 @@ export default function MedicalRecordDetailPage() {
                                     <p className="text-sm text-gray-500 mb-6 max-w-sm text-center">
                                         Đơn thuốc này chưa được tạo bản PDF nào.
                                     </p>
-                                    <Button onClick={() => handleGeneratePdf(selectedPrescription.id)} disabled={isGeneratingPdf}>
+                                    <Button onClick={() => selectedPrescription.id && handleGeneratePdf(selectedPrescription.id)} disabled={isGeneratingPdf || !selectedPrescription.id}>
                                         {isGeneratingPdf ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Printer className="w-4 h-4 mr-2" />}
                                         Tạo & Xem PDF
                                     </Button>
@@ -951,6 +1027,34 @@ export default function MedicalRecordDetailPage() {
                     </ResizablePanel>
                 </ResizablePanelGroup>
             </div>
+
+            {/* Confirm Close Record Dialog */}
+            <AlertDialog open={isConfirmCloseOpen} onOpenChange={setIsConfirmCloseOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Xác nhận đóng bệnh án</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn có chắc chắn muốn đóng bệnh án? Sau khi đóng sẽ không thể chỉnh sửa thêm.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={completeRecordMutation.isPending || updateMutation.isPending}>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                executeCloseRecord().then(() => setIsConfirmCloseOpen(false));
+                            }}
+                            disabled={completeRecordMutation.isPending || updateMutation.isPending}
+                            className="bg-blue-600 hover:bg-blue-700"
+                        >
+                            {completeRecordMutation.isPending || updateMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : null}
+                            Đồng ý
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
