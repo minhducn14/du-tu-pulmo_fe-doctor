@@ -221,6 +221,24 @@ export const medicalService = {
   },
 
   /**
+   * Complete (close) a medical record
+   * @roles DOCTOR (own), ADMIN
+   */
+  completeMedicalRecord: async (recordId: string): Promise<MedicalRecord> => {
+    const response = await api.post<MedicalRecord>(`/medical/records/${recordId}/complete`);
+    return normalizeMedicalRecord(response.data);
+  },
+
+  /**
+   * Reopen a completed medical record
+   * @roles DOCTOR (own, within reopen window), ADMIN
+   */
+  reopenMedicalRecord: async (recordId: string): Promise<MedicalRecord> => {
+    const response = await api.post<MedicalRecord>(`/medical/records/${recordId}/reopen`);
+    return normalizeMedicalRecord(response.data);
+  },
+
+  /**
    * Cập nhật API lấy URL PDF bệnh án
    */
   getMedicalRecordPdfUrl: async (recordId: string): Promise<{ pdfUrl: string | null }> => {

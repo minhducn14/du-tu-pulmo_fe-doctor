@@ -12,6 +12,14 @@ export const SignedStatusEnum = {
 } as const;
 export type SignedStatusEnum = typeof SignedStatusEnum[keyof typeof SignedStatusEnum];
 
+export const MedicalRecordStatusEnum = {
+  DRAFT: 'DRAFT',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+} as const;
+export type MedicalRecordStatusEnum =
+  typeof MedicalRecordStatusEnum[keyof typeof MedicalRecordStatusEnum];
+
 export const PrescriptionStatusEnum = {
   ACTIVE: 'ACTIVE',
   FILLED: 'FILLED',
@@ -158,7 +166,7 @@ export interface MedicalRecord {
   prescriptions?: Prescription[];
   
   // Status
-  status: string;
+  status: MedicalRecordStatusEnum;
   
   // Timestamps
   createdAt: Date;
@@ -210,7 +218,7 @@ export interface MedicalRecordExamination {
     diagnosis: string;
     doctor: string;
   }>;
-  status: string;
+  status: MedicalRecordStatusEnum;
   createdAt: string | Date;
   updatedAt: string | Date;
 }
@@ -733,10 +741,10 @@ export type AIDiagnosisStatus = typeof AIDiagnosisStatus[keyof typeof AIDiagnosi
  * Matches Flask API detection format
  */
 export interface AIFinding {
-  label: string;                      // e.g., "Pneumothorax", "Nodule"
-  classId: number;                    // Class ID from YOLO model
-  confidence: number;                 // 0-1 range (NOTE: multiply by 100 for percentage)
-  bbox: {                             // ✅ Changed: x1/y1/x2/y2 format per Flask API
+  label: string;                      
+  classId: number;                    
+  confidence: number;                 
+  bbox: {                             
     x1: number;
     y1: number;
     x2: number;
@@ -760,9 +768,9 @@ export interface AIAnalysisResponse {
     summary?: string;
   };
   images: {
-    original: string;                 // Cloudinary URL
-    annotated: string | null;         // YOLO detection visualization
-    evaluated: string | null;         // Risk-colored visualization
+    original: string;                 
+    annotated: string | null;         
+    evaluated: string | null;         
   };
   performance?: {
     preprocessMs: number;
@@ -777,9 +785,9 @@ export interface AIAnalysisResponse {
  */
 export interface AIAnalysisResult {
   imageUrl?: string;
-  confidence?: number;                // 0-100 percentage
-  findings?: string;                  // Concatenated findings as string
-  boundingBox?: {                     // Legacy x/y/width/height format
+  confidence?: number;                
+  findings?: string;                  
+  boundingBox?: {                     
     x: number;
     y: number;
     width: number;
@@ -787,10 +795,9 @@ export interface AIAnalysisResult {
   };
   recommendation?: string;
   analyzedAt?: string;
-  // New fields
   riskLevel?: AIRiskLevel;
   diagnosisStatus?: AIDiagnosisStatus;
-  rawFindings?: AIFinding[];          // Keep original findings array
+  rawFindings?: AIFinding[];       
   annotatedImageUrl?: string;
   evaluatedImageUrl?: string;
 }
@@ -799,9 +806,6 @@ export interface AIAnalysisResult {
 // UTILITY: AI Response Converters
 // ============================================================================
 
-/**
- * Convert Flask API bbox (x1/y1/x2/y2) to legacy format (x/y/width/height)
- */
 export function convertBBoxToLegacy(bbox: AIFinding['bbox']): { x: number; y: number; width: number; height: number } {
   return {
     x: bbox.x1,
@@ -833,43 +837,6 @@ export function convertToLegacyAIResult(response: AIAnalysisResponse): AIAnalysi
     annotatedImageUrl: response.images.annotated || undefined,
     evaluatedImageUrl: response.images.evaluated || undefined,
   };
-}
-
-// ============================================================================
-// SPECIALIZED EXAM DATA (FE-only, consider removing if not stored in BE)
-// ============================================================================
-
-export interface SpecializedExamData {
-  // Template (e.g., "Hô hấp", "Tim mạch")
-  template?: string;
-  
-  // Respiratory Exam - Chest Observation
-  chestObservation?: 'normal' | 'barrel_chest' | 'poor_mobility' | 'scoliosis';
-  
-  // Respiratory Exam - Breath Sounds
-  breathSounds?: 'soft' | 'diminished' | 'absent';
-  
-  // Respiratory Exam - Lung Sounds
-  leftLungSounds?: ('crackles' | 'wheeze' | 'rhonchi')[];
-  rightLungSounds?: ('crackles' | 'wheeze' | 'rhonchi')[];
-  
-  // Additional Notes
-  additionalNotes?: string;
-  
-  // Spirometry Data (if available)
-  spirometry?: SpirometryData;
-  
-  // AI Analysis Result (if X-ray uploaded)
-  aiAnalysis?: AIAnalysisResult;
-}
-
-export interface SpirometryData {
-  fev1?: number;              // Forced Expiratory Volume in 1 second (L)
-  fev1Predicted?: number;     // Predicted FEV1 (%)
-  fvc?: number;               // Forced Vital Capacity (L)
-  fvcPredicted?: number;      // Predicted FVC (%)
-  fev1FvcRatio?: number;      // FEV1/FVC ratio (%)
-  interpretation?: string;    // e.g., "Normal", "Obstructive", "Restrictive"
 }
 
 // ============================================================================
