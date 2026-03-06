@@ -311,13 +311,52 @@ export default function MedicalRecordDetailPage() {
         if (!id) return;
         try {
             const { pdfUrl } = await medicalService.generateMedicalRecordPdf(id);
-            if (pdfUrl) {
-                window.open(pdfUrl, '_blank');
-            } else {
-                toast.error('Không tìm thấy link PDF');
-            }
+            if (!pdfUrl) return toast.error('Không tìm thấy link PDF');
+
+            const response = await fetch(pdfUrl);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = blobUrl;
+            document.body.appendChild(iframe);
+
+            iframe.onload = () => {
+                setTimeout(() => {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        URL.revokeObjectURL(blobUrl);
+                    }, 1000);
+                }, 500);
+            };
         } catch {
             toast.error('Không thể tạo file in bệnh án');
+        }
+    };
+
+    const handleDownloadRecord = async () => {
+        if (!id) return;
+        try {
+            const { pdfUrl } = await medicalService.generateMedicalRecordPdf(id);
+            if (!pdfUrl) return toast.error('Không tìm thấy link PDF');
+
+            const response = await fetch(pdfUrl);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `benh-an-${record?.recordNumber ?? id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        } catch {
+            toast.error('Không thể tải bệnh án');
         }
     };
 
@@ -959,7 +998,7 @@ export default function MedicalRecordDetailPage() {
                         {/* Pinned Action Bar */}
                         <div className="px-6 py-3 border-t border-gray-200 bg-white flex items-center justify-end gap-3 shrink-0">
                             <button
-                                onClick={handlePrintRecord}
+                                onClick={handleDownloadRecord}
                                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
                             >
                                 <Download className="w-4 h-4" />
