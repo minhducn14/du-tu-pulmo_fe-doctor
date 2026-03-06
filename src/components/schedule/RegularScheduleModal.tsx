@@ -120,7 +120,9 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
         });
 
         setDaysData(newDaysData);
-    }, [open, schedules, appointmentType]);
+        // Chỉ khởi tạo (sync) data khi Modal VỪA MỞ, không sync lại khi schedules reference thay đổi (do React Query re-fetch liên tục)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, appointmentType]);
 
     // Handler: Bật/Tắt lịch cho một ngày
     const toggleDay = (dayOfWeek: number, enabled: boolean) => {
@@ -149,6 +151,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
 
     // Handler: Cập nhật thông tin của một slot
     const updateSlot = (dayOfWeek: number, tempId: string, updates: Partial<TimeSlotData>) => {
+        console.log(dayOfWeek, tempId, updates);
         setDaysData(prev => prev.map(d => {
             if (d.dayOfWeek === dayOfWeek) {
                 return {
@@ -531,7 +534,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                                 type="number"
                                                                 min={0}
                                                                 placeholder="Ngày"
-                                                                value={slot.minimumBookingDays || ''}
+                                                                value={slot.minimumBookingDays === 0 ? 0 : (slot.minimumBookingDays || '')}
                                                                 onChange={(e) => updateSlot(day.dayOfWeek, slot.tempId, { minimumBookingDays: Number(e.target.value) })}
                                                             />
                                                         </div>
@@ -550,7 +553,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                                 type="number"
                                                                 min={0}
                                                                 placeholder="Phí khám"
-                                                                value={slot.consultationFee || ''}
+                                                                value={slot.consultationFee === 0 ? 0 : (slot.consultationFee || '')}
                                                                 onChange={(e) => updateSlot(day.dayOfWeek, slot.tempId, { consultationFee: Number(e.target.value) })}
                                                             />
                                                         </div>
@@ -561,7 +564,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                                 min={0}
                                                                 max={100}
                                                                 placeholder="% Giảm giá"
-                                                                value={slot.discountPercent || ''}
+                                                                value={slot.discountPercent === 0 ? 0 : (slot.discountPercent || '')}
                                                                 onChange={(e) => updateSlot(day.dayOfWeek, slot.tempId, { discountPercent: Number(e.target.value) })}
                                                             />
                                                         </div>
