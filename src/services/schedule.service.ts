@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 import type {
   DoctorSchedule,
   CreateScheduleDto,
@@ -6,13 +6,13 @@ import type {
   CreateFlexibleScheduleDto,
   CreateTimeOffDto,
   GenerateSlotsDto,
-} from '@/types/schedule';
-import type { TimeSlot } from '@/types/timeslot';
+} from "@/types/schedule";
+import type { TimeSlot } from "@/types/timeslot";
 
 const mapSchedule = (schedule: DoctorSchedule): DoctorSchedule => ({
   ...schedule,
   minimumBookingDays:
-    typeof schedule.minimumBookingTime === 'number'
+    typeof schedule.minimumBookingTime === "number"
       ? Math.floor(schedule.minimumBookingTime / (24 * 60))
       : schedule.minimumBookingDays,
 });
@@ -21,16 +21,16 @@ export const scheduleService = {
   // Get all schedules
   getSchedules: async (doctorId: string): Promise<DoctorSchedule[]> => {
     const response = await api.get<DoctorSchedule[]>(
-      `/doctors/${doctorId}/schedules`
+      `/doctors/${doctorId}/schedules`,
     );
-    
+
     return response.data.map(mapSchedule);
   },
 
   // Get regular schedules
   getRegularSchedules: async (doctorId: string): Promise<DoctorSchedule[]> => {
     const response = await api.get<DoctorSchedule[]>(
-      `/doctors/${doctorId}/schedules/regular`
+      `/doctors/${doctorId}/schedules/regular`,
     );
     return response.data.map(mapSchedule);
   },
@@ -38,7 +38,7 @@ export const scheduleService = {
   // Get flexible schedules
   getFlexibleSchedules: async (doctorId: string): Promise<DoctorSchedule[]> => {
     const response = await api.get<DoctorSchedule[]>(
-      `/doctors/${doctorId}/schedules/flexible`
+      `/doctors/${doctorId}/schedules/flexible`,
     );
     return response.data.map(mapSchedule);
   },
@@ -46,7 +46,7 @@ export const scheduleService = {
   // Get time-off schedules
   getTimeOffSchedules: async (doctorId: string): Promise<DoctorSchedule[]> => {
     const response = await api.get<DoctorSchedule[]>(
-      `/doctors/${doctorId}/schedules/time-off`
+      `/doctors/${doctorId}/schedules/time-off`,
     );
     return response.data.map(mapSchedule);
   },
@@ -54,11 +54,11 @@ export const scheduleService = {
   // Create regular schedule
   createRegularSchedule: async (
     doctorId: string,
-    data: CreateScheduleDto
+    data: CreateScheduleDto,
   ): Promise<DoctorSchedule> => {
     const response = await api.post<DoctorSchedule>(
       `/doctors/${doctorId}/schedules/regular`,
-      data
+      data,
     );
     return response.data;
   },
@@ -66,11 +66,11 @@ export const scheduleService = {
   // Bulk create regular schedules
   bulkCreateRegularSchedules: async (
     doctorId: string,
-    schedules: CreateScheduleDto[]
+    schedules: CreateScheduleDto[],
   ): Promise<DoctorSchedule[]> => {
     const response = await api.post<DoctorSchedule[]>(
       `/doctors/${doctorId}/schedules/regular/bulk`,
-      { schedules }
+      { schedules },
     );
     return response.data;
   },
@@ -78,11 +78,11 @@ export const scheduleService = {
   // Bulk update regular schedules
   bulkUpdateRegularSchedules: async (
     doctorId: string,
-    schedules: UpdateScheduleDto[]
+    schedules: UpdateScheduleDto[],
   ): Promise<DoctorSchedule[]> => {
     const response = await api.patch<{ updatedSchedules: DoctorSchedule[] }>(
       `/doctors/${doctorId}/schedules/regular/bulk`,
-      { schedules }
+      { schedules },
     );
     return response.data.updatedSchedules;
   },
@@ -90,11 +90,11 @@ export const scheduleService = {
   // Create flexible schedule
   createFlexibleSchedule: async (
     doctorId: string,
-    data: CreateFlexibleScheduleDto
+    data: CreateFlexibleScheduleDto,
   ): Promise<DoctorSchedule> => {
     const response = await api.post<DoctorSchedule>(
       `/doctors/${doctorId}/schedules/flexible`,
-      data
+      data,
     );
     return response.data;
   },
@@ -102,11 +102,11 @@ export const scheduleService = {
   // Create time-off
   createTimeOff: async (
     doctorId: string,
-    data: CreateTimeOffDto
+    data: CreateTimeOffDto,
   ): Promise<DoctorSchedule> => {
     const response = await api.post<DoctorSchedule>(
       `/doctors/${doctorId}/schedules/time-off`,
-      data
+      data,
     );
     return response.data;
   },
@@ -115,11 +115,11 @@ export const scheduleService = {
   updateRegularSchedule: async (
     doctorId: string,
     id: string,
-    data: UpdateScheduleDto
+    data: UpdateScheduleDto,
   ): Promise<DoctorSchedule> => {
     const response = await api.patch<DoctorSchedule>(
       `/doctors/${doctorId}/schedules/regular/${id}`,
-      data
+      data,
     );
     return mapSchedule(response.data);
   },
@@ -128,11 +128,11 @@ export const scheduleService = {
   updateFlexibleSchedule: async (
     doctorId: string,
     id: string,
-    data: Partial<CreateFlexibleScheduleDto>
+    data: Partial<CreateFlexibleScheduleDto>,
   ): Promise<DoctorSchedule> => {
     const response = await api.patch<DoctorSchedule>(
       `/doctors/${doctorId}/schedules/flexible/${id}`,
-      data
+      data,
     );
     return mapSchedule(response.data);
   },
@@ -141,22 +141,28 @@ export const scheduleService = {
   updateTimeOff: async (
     doctorId: string,
     id: string,
-    data: Partial<CreateTimeOffDto>
+    data: Partial<CreateTimeOffDto>,
   ): Promise<DoctorSchedule> => {
     const response = await api.patch<DoctorSchedule>(
       `/doctors/${doctorId}/schedules/time-off/${id}`,
-      data
+      data,
     );
     return mapSchedule(response.data);
   },
 
   // Delete regular schedule
-  deleteRegularSchedule: async (doctorId: string, id: string): Promise<void> => {
+  deleteRegularSchedule: async (
+    doctorId: string,
+    id: string,
+  ): Promise<void> => {
     await api.delete(`/doctors/${doctorId}/schedules/regular/${id}`);
   },
 
   // Delete flexible schedule
-  deleteFlexibleSchedule: async (doctorId: string, id: string): Promise<void> => {
+  deleteFlexibleSchedule: async (
+    doctorId: string,
+    id: string,
+  ): Promise<void> => {
     await api.delete(`/doctors/${doctorId}/schedules/flexible/${id}`);
   },
 
@@ -168,11 +174,11 @@ export const scheduleService = {
   // Generate slots for doctor
   generateSlotsForDoctor: async (
     doctorId: string,
-    data: GenerateSlotsDto
+    data: GenerateSlotsDto,
   ): Promise<TimeSlot[]> => {
     const response = await api.post<TimeSlot[]>(
       `/doctors/${doctorId}/schedules/generate-slots`,
-      data
+      data,
     );
     return response.data;
   },
@@ -180,7 +186,7 @@ export const scheduleService = {
   // Generate slots (BE chỉ hỗ trợ theo bác sĩ)
   generateSlotsFromSchedule: async (
     doctorId: string,
-    data: GenerateSlotsDto
+    data: GenerateSlotsDto,
   ): Promise<TimeSlot[]> => {
     return scheduleService.generateSlotsForDoctor(doctorId, data);
   },

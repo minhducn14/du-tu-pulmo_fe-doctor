@@ -36,7 +36,7 @@ export const requestForToken = async (): Promise<string | null> => {
         });
 
         if (token) {
-            // console.log("👉 FCM Token:", token);
+            console.log("👉 FCM Token:", token);
             return token;
         }
 

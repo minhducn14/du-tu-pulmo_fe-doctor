@@ -121,7 +121,7 @@ export const ChatPage = () => {
       setDebouncedKeyword('');
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Khong the tao cuoc tro chuyen moi.';
+        error instanceof Error ? error.message : 'Không thể tạo cuộc trò chuyện mới.';
       toast.error(errorMessage);
     }
   };
@@ -155,7 +155,7 @@ export const ChatPage = () => {
     const trimmed = messageInput.trim();
     if (!selectedRoomId || !trimmed) return;
     if (trimmed.length > 5000) {
-      toast.error('Noi dung tin nhan toi da 5000 ky tu.');
+      toast.error('Nội dung tin nhắn tối đa 5000 ký tự.');
       return;
     }
 
@@ -178,21 +178,21 @@ export const ChatPage = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Tin nhan tu van"
-        subtitle="Trao doi truc tiep voi benh nhan qua chat"
+        title="Tin nhắn trao đổi"
+        subtitle="Trao đổi trực tiếp với bệnh nhân qua chat"
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
         <Card className="h-[calc(100vh-220px)] min-h-[560px]">
           <CardHeader className="space-y-3">
-            <CardTitle className="text-base">Cuoc tro chuyen</CardTitle>
+            <CardTitle className="text-base">Cuộc trò chuyện</CardTitle>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
                 value={patientKeyword}
                 onChange={(event) => setPatientKeyword(event.target.value)}
                 className="pl-9"
-                placeholder="Tim benh nhan de chat..."
+                placeholder="Tìm bệnh nhân để chat"
               />
             </div>
             {debouncedKeyword.length >= 2 && (
@@ -204,7 +204,7 @@ export const ChatPage = () => {
                       <Skeleton key={index} className="h-8 w-full" />
                     ))}
                   {!patientSearchQuery.isLoading && availablePatients.length === 0 && (
-                    <p className="text-xs text-gray-500">Khong co benh nhan phu hop.</p>
+                    <p className="text-xs text-gray-500">Không có bệnh nhân phù hợp.</p>
                   )}
                   {!patientSearchQuery.isLoading &&
                     availablePatients.map((patient) => (
@@ -217,10 +217,10 @@ export const ChatPage = () => {
                       >
                         <div className="flex flex-col">
                           <span className="text-sm font-medium">
-                            {patient.user?.fullName ?? 'Khong ro ten'}
+                            {patient.user?.fullName ?? 'Không rõ tên'}
                           </span>
                           <span className="text-xs text-gray-500">
-                            {patient.user?.phone || patient.profileCode || 'Khong co thong tin phu'}
+                            {patient.user?.phone || patient.profileCode || 'Không có thông tin phụ'}
                           </span>
                         </div>
                       </Button>
@@ -239,7 +239,7 @@ export const ChatPage = () => {
 
                 {!isLoadingRooms && rooms.length === 0 && (
                   <div className="rounded-md border border-dashed p-4 text-center text-sm text-gray-500">
-                    Chua co cuoc tro chuyen nao.
+                    Chưa có cuộc trò chuyện nào.
                   </div>
                 )}
 
@@ -266,7 +266,7 @@ export const ChatPage = () => {
                         </Avatar>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-gray-900">
-                            {participant.fullName || 'Khong ro ten'}
+                            {participant.fullName || 'Không rõ tên'}
                           </p>
                           <p className="truncate text-xs text-gray-500">{participant.email || ' '}</p>
                         </div>
@@ -292,7 +292,7 @@ export const ChatPage = () => {
             <div className="flex items-center justify-between">
               <div className="min-w-0">
                 <CardTitle className="truncate text-base">
-                  {activeParticipant?.fullName || 'Chon cuoc tro chuyen'}
+                  {activeParticipant?.fullName || 'Chọn cuộc trò chuyện'}
                 </CardTitle>
                 <p className="truncate text-sm text-gray-500">
                   {activeParticipant?.email || ' '}
@@ -315,7 +315,7 @@ export const ChatPage = () => {
                 {!selectedRoomId && (
                   <div className="flex h-64 flex-col items-center justify-center text-gray-500">
                     <MessageSquareText className="mb-2 h-8 w-8" />
-                    <p>Chon mot cuoc tro chuyen de bat dau.</p>
+                    <p>Chọn một cuộc trò chuyện để bắt đầu.</p>
                   </div>
                 )}
 
@@ -350,9 +350,9 @@ export const ChatPage = () => {
                             )}
                           >
                             <span>{formatDateTime(message.createdAt)}</span>
-                            {isMine && message.status === 'sending' && <span>Dang gui...</span>}
+                            {isMine && message.status === 'sending' && <span>Đang gửi...</span>}
                             {isMine && message.status === 'failed' && (
-                              <span className="font-medium text-red-200">Gui loi</span>
+                              <span className="font-medium text-red-200">Gửi lỗi</span>
                             )}
                           </div>
                         </div>
@@ -362,7 +362,7 @@ export const ChatPage = () => {
 
                 {typingUsersForActiveRoom.length > 0 && (
                   <p className="px-1 text-xs text-gray-500">
-                    {typingUsersForActiveRoom.map((item) => item.fullName).join(', ')} dang nhap...
+                    {typingUsersForActiveRoom.map((item) => item.fullName).join(', ')} đang nhập...
                   </p>
                 )}
 
@@ -380,8 +380,8 @@ export const ChatPage = () => {
                 maxLength={5000}
                 placeholder={
                   selectedRoomId
-                    ? 'Nhap noi dung tin nhan...'
-                    : 'Chon cuoc tro chuyen truoc khi gui tin nhan.'
+                    ? 'Nhập nội dung tin nhắn...'
+                    : 'Chọn cuộc trò chuyện trước khi gửi tin nhắn.'
                 }
                 disabled={!selectedRoomId}
               />

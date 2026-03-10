@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { appointmentService } from '@/services/appointment.service';
 import type { Appointment } from '@/types/appointment';
+import { SafeRichText } from '@/components/common/SafeRichText';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
     PENDING: { label: 'Chờ xác nhận', color: 'bg-orange-100 text-orange-700' },
@@ -212,7 +213,10 @@ export const AppointmentDetailPage = () => {
                             {appt.patientNotes && (
                                 <div>
                                     <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Ghi chú bệnh nhân</p>
-                                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">{appt.patientNotes}</p>
+                                    <SafeRichText
+                                        html={appt.patientNotes}
+                                        className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md"
+                                    />
                                 </div>
                             )}
                             {appt.doctorNotes && (

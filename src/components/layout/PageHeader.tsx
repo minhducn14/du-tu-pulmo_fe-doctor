@@ -7,7 +7,7 @@ import { HeaderUserMenu } from '@/components/layout/HeaderUserMenu';
 import { useAppStore } from '@/store/useAppStore';
 import { useUnreadNotificationCount } from '@/hooks/use-notifications';
 import { authService } from '@/services/auth.service';
-import { clearFcmToken, getFcmToken } from '@/hooks/use-fcm-token';
+import { getFcmToken } from '@/hooks/use-fcm-token';
 import { useLogout } from '@/hooks/use-auth';
 
 interface PageHeaderProps {
@@ -46,7 +46,6 @@ export function PageHeader({
         const fcmToken = getFcmToken();
         try {
             if (fcmToken) await authService.removeFcmToken(fcmToken);
-            clearFcmToken();
             await logoutMutation();
         } catch (error) {
             console.error('Logout error:', error);

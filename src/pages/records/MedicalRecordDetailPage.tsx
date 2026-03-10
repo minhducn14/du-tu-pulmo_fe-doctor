@@ -11,6 +11,7 @@ import {
     MedicalRecordStatusEnum,
     type UpdateMedicalRecordDto,
 } from '@/types/medical';
+import type { AiAnalysisResponse } from '@/types/screening';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,6 +22,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { SafeRichText } from '@/components/common/SafeRichText';
+import AiAnalysisResult from '@/components/screening/AiAnalysisResult';
 
 export default function MedicalRecordDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -29,9 +32,11 @@ export default function MedicalRecordDetailPage() {
 
     const [activeTab, setActiveTab] = useState('medical-record');
     const [selectedPrescription, setSelectedPrescription] = useState<{ id?: string; pdfUrl?: string } | null>(null);
+    const [selectedScreeningId, setSelectedScreeningId] = useState<string | null>(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [isConfirmCloseOpen, setIsConfirmCloseOpen] = useState(false);
+    const [presentIllnessViewMode] = useState<'preview' | 'source'>('preview');
 
     const { data: record, isLoading, error } = useQuery({
         queryKey: ['medical-record', id],
@@ -228,7 +233,7 @@ export default function MedicalRecordDetailPage() {
         },
     });
 
-    const handleInputChange = (field: string, value: any) => {
+    const handleInputChange = (field: keyof typeof formData, value: unknown) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         setIsDirty(true);
     };
@@ -379,6 +384,7 @@ export default function MedicalRecordDetailPage() {
     const tabs = [
         { id: 'medical-record', label: 'Bệnh án' },
         { id: 'prescription', label: 'Phiếu điều trị' },
+        { id: 'screening', label: 'Tầm soát' },
         { id: 'nursing-care', label: 'Phiếu chăm sóc' },
         { id: 'discharge-summary', label: 'Tổng kết bệnh án' }
     ];
@@ -542,13 +548,42 @@ export default function MedicalRecordDetailPage() {
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                                     Bệnh sử hiện tại / Quá trình bệnh lý
                                                 </label>
-                                                <textarea
-                                                    value={formData.presentIllness || ''}
-                                                    onChange={(e) => handleInputChange('presentIllness', e.target.value)}
-                                                    rows={3}
-                                                    placeholder="Nhập quá trình bệnh lý..."
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                />
+                                                <div className="space-y-2">
+                                                    {/* <div className="flex items-center gap-2">
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant={presentIllnessViewMode === 'preview' ? 'default' : 'outline'}
+                                                            onClick={() => setPresentIllnessViewMode('preview')}
+                                                        >
+                                                            Preview
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant={presentIllnessViewMode === 'source' ? 'default' : 'outline'}
+                                                            onClick={() => setPresentIllnessViewMode('source')}
+                                                        >
+                                                            Source
+                                                        </Button>
+                                                    </div> */}
+                                                    {presentIllnessViewMode === 'preview' ? (
+                                                        <div className="min-h-[80px] rounded-md border border-gray-300 bg-gray-50 p-3">
+                                                            <SafeRichText
+                                                                html={formData.presentIllness || ''}
+                                                                className="[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <textarea
+                                                            value={formData.presentIllness || ''}
+                                                            onChange={(e) => handleInputChange('presentIllness', e.target.value)}
+                                                            rows={3}
+                                                            placeholder="Nhập quá trình bệnh lý..."
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        />
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </section>
@@ -837,6 +872,47 @@ export default function MedicalRecordDetailPage() {
                                 </div>
                             )}
 
+                            {/* TAB: VIEW SCREENING */}
+                            {activeTab === 'screening' && (
+                                <div className="space-y-4">
+                                    <h3 className="text-base font-semibold text-gray-900 mb-4">Danh sách tầm soát</h3>
+                                    {record.screeningRequests && record.screeningRequests.length > 0 ? (
+                                        record.screeningRequests.map((screening) => (
+                                            <button
+                                                key={screening.id}
+                                                onClick={() => setSelectedScreeningId(screening.id)}
+                                                className={`w-full text-left p-4 rounded-lg border-2 transition-all ${selectedScreeningId === screening.id
+                                                    ? 'border-blue-500 bg-blue-50'
+                                                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <div className="font-medium text-gray-900">
+                                                            #{screening.screeningNumber} - {screening.screeningType || 'X-Quang'}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                                                            <span>
+                                                                <Calendar className="w-4 h-4 inline mr-1" />
+                                                                {screening.requestedAt ? new Date(screening.requestedAt).toLocaleDateString('vi-VN') : '--'}
+                                                            </span>
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${screening.status === 'AI_COMPLETED' ? 'bg-green-100 text-green-700' :
+                                                                screening.status === 'AI_PROCESSING' ? 'bg-blue-100 text-blue-700' :
+                                                                    'bg-gray-100 text-gray-600'
+                                                                }`}>
+                                                                {screening.status}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="p-4 bg-gray-50 rounded text-center text-gray-500">Chưa có yêu cầu tầm soát nào</div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* TAB: TỔNG KẾT BỆNH ÁN */}
                             {activeTab === 'discharge-summary' && (
                                 // Toggle "Đóng bệnh án" và "Ký số" được tách ra ngoài fieldset
@@ -1050,6 +1126,86 @@ export default function MedicalRecordDetailPage() {
                                     </Button>
                                 </div>
                             )
+                        ) : activeTab === 'screening' && selectedScreeningId ? (
+                            <div className="h-full overflow-y-auto p-6 bg-gray-50 space-y-6">
+                                {(() => {
+                                    const screening = record.screeningRequests?.find(s => s.id === selectedScreeningId);
+                                    if (!screening) return null;
+
+                                    return (
+                                        <>
+                                            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                                <h4 className="font-semibold text-gray-900 mb-3">Thông tin tầm soát</h4>
+                                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                                    <div>
+                                                        <span className="text-gray-500 block mb-1">Mã tầm soát</span>
+                                                        <span className="font-medium">{screening.screeningNumber}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-500 block mb-1">Loại</span>
+                                                        <span className="font-medium">{screening.screeningType}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-500 block mb-1">Cấp cứu</span>
+                                                        <span className={`font-medium ${screening.priority === 'HIGH' || screening.priority === 'URGENT' ? 'text-red-600' : ''}`}>
+                                                            {screening.priority}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-500 block mb-1">Ngày yêu cầu</span>
+                                                        <span className="font-medium">{screening.requestedAt ? new Date(screening.requestedAt).toLocaleString('vi-VN') : '--'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {screening.images && screening.images.length > 0 && (
+                                                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                                    <h4 className="font-semibold text-gray-900 mb-3">Hình ảnh</h4>
+                                                    <div className="grid grid-cols-1 gap-4">
+                                                        {screening.images.map((img) => (
+                                                            <div key={img.id} className="border rounded bg-black/90 p-2 flex items-center justify-center min-h-[300px]">
+                                                                <img
+                                                                    src={img.fileUrl}
+                                                                    alt={img.fileName}
+                                                                    className="max-w-full max-h-[500px] object-contain"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {screening.aiAnalyses && screening.aiAnalyses.length > 0 ? (
+                                                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                                    <h4 className="font-semibold text-gray-900 mb-3">Kết quả AI</h4>
+                                                    <div className="space-y-4">
+                                                        {screening.aiAnalyses.map((analysis) => (
+                                                            <AiAnalysisResult key={analysis.id} analysis={analysis as unknown as AiAnalysisResponse} />
+                                                        ))}
+                                                    </div>
+                                                    <div className="mt-4 flex justify-end">
+                                                        <Button variant="outline" onClick={() => navigate(`/doctor/screenings/${screening.id}`)}>
+                                                            Kết luận chi tiết
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : screening.status === 'AI_PROCESSING' ? (
+                                                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center h-48">
+                                                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
+                                                    <p className="text-gray-600 font-medium">AI đang xử lý hình ảnh...</p>
+                                                </div>
+                                            ) : (
+                                                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center">
+                                                    <p className="text-gray-500">Chưa có kết quả phân tích AI</p>
+                                                    <Button className="mt-4" variant="outline" onClick={() => navigate(`/doctor/screenings/${screening.id}`)}>
+                                                        Xử lý
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                            </div>
                         ) : (
                             <div className="flex items-center justify-center h-full text-center">
                                 <div>
@@ -1058,7 +1214,9 @@ export default function MedicalRecordDetailPage() {
                                     <p className="text-sm text-gray-500 mt-2">
                                         {activeTab === 'prescription'
                                             ? 'Chọn một đơn thuốc để xem chi tiết'
-                                            : 'Bản xem trước sẽ xuất hiện ngay sau khi lưu và ký thành công'}
+                                            : activeTab === 'screening'
+                                                ? 'Chọn một yêu cầu tầm soát để xem chi tiết'
+                                                : 'Bản xem trước sẽ xuất hiện ngay sau khi lưu và ký thành công'}
                                     </p>
                                 </div>
                             </div>

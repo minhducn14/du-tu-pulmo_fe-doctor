@@ -108,12 +108,6 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             href: '/doctor/chat',
             icon: ChatIcon,
             allowedRoles: ['DOCTOR'],
-        },
-        {
-            name: 'Danh sách screening',
-            href: '/doctor/screenings',
-            icon: AIBrainIcon,
-            allowedRoles: ['DOCTOR'],
         }
     ];
 
@@ -168,6 +162,12 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             href: '/doctor/ai-xray',
             icon: AIBrainIcon,
             highlight: true,
+            allowedRoles: ['DOCTOR'],
+        },
+        {
+            name: 'Danh sách screening',
+            href: '/doctor/screenings',
+            icon: AIBrainIcon,
             allowedRoles: ['DOCTOR'],
         }
     ];

@@ -107,6 +107,11 @@ export default function AiAnalysisResult({ analysis }: Props) {
                 </div>
             )}
 
+            {/* IMAGE */}
+            <div className="rounded-md border p-2 bg-black/90">
+                <img src={analysis.evaluatedImageUrl} alt="xray" className="max-h-[360px] mx-auto object-contain" />
+            </div>
+
             {/* FOOTER */}
             <div className="text-xs text-gray-500 pt-3 border-t">
                 Tổng findings: {analysis.totalFindings}

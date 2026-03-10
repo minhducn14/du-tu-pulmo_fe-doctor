@@ -136,6 +136,12 @@ export function AIXraySection({
               <CardContent>
                 <AiAnalysisResult analysis={result.analysis} />
               </CardContent>
+
+              <CardContent>
+                <div className="rounded-md border p-2 bg-black/90">
+                  <img src={result.analysis.evaluatedImageUrl} alt="xray" className="max-h-[360px] mx-auto object-contain" />
+                </div>
+              </CardContent>
             </Card>
           )}
         </div>

@@ -20,6 +20,7 @@ import { useDashboardLayout } from '@/components/layout/DashboardLayout';
 import { PrescriptionEditor, type PrescriptionEditorHandle } from '@/components/medical/PrescriptionEditor';
 import { medicalService } from '@/services/medical.service';
 import { toast } from 'sonner';
+import { SafeRichText } from '@/components/common/SafeRichText';
 
 interface MedicalRecordWorkspaceProps {
     // Data
@@ -129,6 +130,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
     const navigate = useNavigate();
     const user = getUser();
     const [activeTab, setActiveTab] = useState<string>('info');
+    const [presentIllnessViewMode, setPresentIllnessViewMode] = useState<'preview' | 'source'>('preview');
     const [savingVitals, setSavingVitals] = useState(false);
 
     // Use props directly
@@ -596,13 +598,42 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                         <div ref={sectionRefs.clinical} className="space-y-4 scroll-mt-[120px]">
                             <Section title="HỎI BỆNH">
                                 <Field label="Quá trình bệnh lý">
-                                    <Textarea
-                                        value={medicalRecord?.presentIllness || ''}
-                                        placeholder="Mô tả diễn tiến bệnh..."
-                                        onChange={(e) => onUpdateRecord('presentIllness', e.target.value)}
-                                        disabled={!canEdit}
-                                        className="min-h-[120px]"
-                                    />
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            {/* <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={presentIllnessViewMode === 'preview' ? 'default' : 'outline'}
+                                                onClick={() => setPresentIllnessViewMode('preview')}
+                                            >
+                                                Preview
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={presentIllnessViewMode === 'source' ? 'default' : 'outline'}
+                                                onClick={() => setPresentIllnessViewMode('source')}
+                                            >
+                                                Source
+                                            </Button> */}
+                                        </div>
+                                        {presentIllnessViewMode === 'preview' ? (
+                                            <div className="min-h-[120px] rounded-md border border-slate-200 bg-slate-50 p-3">
+                                                <SafeRichText
+                                                    html={medicalRecord?.presentIllness || ''}
+                                                    className="[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <Textarea
+                                                value={medicalRecord?.presentIllness || ''}
+                                                placeholder="Mô tả diễn tiến bệnh..."
+                                                onChange={(e) => onUpdateRecord('presentIllness', e.target.value)}
+                                                disabled={!canEdit}
+                                                className="min-h-[120px]"
+                                            />
+                                        )}
+                                    </div>
                                 </Field>
                             </Section>
 
