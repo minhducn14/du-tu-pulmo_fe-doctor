@@ -43,7 +43,7 @@ export default function MedicalRecordDetailPage() {
         queryFn: () => medicalService.getDetail(id!),
         enabled: !!id,
     });
-    
+
     const patientInfo = record ? {
         fullName: record.patient.fullName,
         gender: record.patient.gender === 'MALE' ? 'Nam' : 'Nữ',

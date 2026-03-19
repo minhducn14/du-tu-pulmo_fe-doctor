@@ -160,6 +160,19 @@ export function QueueCard({
             );
         }
 
+        // CHECKED_IN or CONFIRMED + VIDEO: Show "VÀO VIDEO"
+        if (canJoinVideo) {
+            return (
+                <Button
+                    onClick={() => onJoinVideo?.(item.id)}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                    <Video className="w-4 h-4 mr-2" />
+                    VÀO VIDEO
+                </Button>
+            );
+        }
+
         // CHECKED_IN + IN_CLINIC: Show "BẮT ĐẦU KHÁM"
         if (canStartExam) {
             return (
@@ -173,25 +186,12 @@ export function QueueCard({
             );
         }
 
-        // CHECKED_IN + VIDEO: Show "VÀO VIDEO"
-        if (canJoinVideo) {
-            return (
-                <Button
-                    onClick={() => onJoinVideo?.(item.id)}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                    <Video className="w-4 h-4 mr-2" />
-                    VÀO VIDEO
-                </Button>
-            );
-        }
-
         // COMPLETED: No action buttons
         if (isCompleted) {
             return null;
         }
 
-        // CONFIRMED: Show "Chờ check-in" (disabled)
+        // CONFIRMED + IN_CLINIC: Show "Chờ check-in" (disabled)
         if (isWaitingCheckIn) {
             return (
                 <Button variant="outline" className="w-full opacity-60" disabled>

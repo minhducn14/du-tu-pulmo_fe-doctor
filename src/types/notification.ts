@@ -1,11 +1,5 @@
-export type NotificationStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE';
-export type NotificationType =
-  | 'GENERAL'
-  | 'PAYMENT'
-  | 'CONTRACT'
-  | 'PENALTY'
-  | 'SYSTEM'
-  | 'APPOINTMENT';
+export type NotificationStatus = "PENDING" | "ACTIVE" | "INACTIVE";
+export type NotificationType = "GENERAL" | "PAYMENT" | "SYSTEM" | "APPOINTMENT";
 
 export interface NotificationItem {
   id: string;
@@ -20,13 +14,20 @@ export interface NotificationItem {
 export interface NotificationListResponse {
   items: NotificationItem[];
   meta: {
-    total: number;
-    page: number;
-    limit: number;
+    currentPage: number;
+    itemsPerPage: number;
+    totalItems: number;
     totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
   };
 }
 
 export interface UnreadCountResponse {
   count: number;
+}
+
+export interface NotificationActionResponse {
+  success: boolean;
+  message: string;
 }

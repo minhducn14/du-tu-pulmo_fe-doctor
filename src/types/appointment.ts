@@ -312,9 +312,7 @@ export interface VideoCallStatus {
 export interface VideoCallJoinResponse {
   token: string;
   url: string;
-  appointment?: {
-    data?: Appointment;
-  };
+  appointment?: Appointment;
 }
 
 // =========================

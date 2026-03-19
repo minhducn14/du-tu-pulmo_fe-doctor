@@ -159,6 +159,7 @@ export const CAN_START_EXAM_STATUSES: AppointmentStatus[] = [
 
 // Status that allows "VÀO VIDEO" for VIDEO appointments
 export const CAN_JOIN_VIDEO_STATUSES: AppointmentStatus[] = [
+  AppointmentStatus.CONFIRMED,
   AppointmentStatus.CHECKED_IN,
 ];
 

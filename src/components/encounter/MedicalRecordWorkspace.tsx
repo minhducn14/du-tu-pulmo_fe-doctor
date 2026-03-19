@@ -130,7 +130,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
     const navigate = useNavigate();
     const user = getUser();
     const [activeTab, setActiveTab] = useState<string>('info');
-    const [presentIllnessViewMode, setPresentIllnessViewMode] = useState<'preview' | 'source'>('preview');
+    const [presentIllnessViewMode] = useState<'preview' | 'source'>('preview');
     const [savingVitals, setSavingVitals] = useState(false);
 
     // Use props directly

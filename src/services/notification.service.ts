@@ -1,5 +1,6 @@
 import api from './api';
 import type {
+  NotificationActionResponse,
   NotificationListResponse,
   UnreadCountResponse,
 } from '@/types/notification';
@@ -17,12 +18,18 @@ export const notificationService = {
     return response.data?.count ?? 0;
   },
 
-  markAllAsRead: async (): Promise<void> => {
-    await api.patch('/notifications/read-all');
+  markAllAsRead: async (): Promise<NotificationActionResponse> => {
+    const response = await api.patch<NotificationActionResponse>(
+      '/notifications/read-all',
+    );
+    return response.data;
   },
 
-  markAsRead: async (id: string): Promise<void> => {
-    await api.patch(`/notifications/${id}/read`);
+  markAsRead: async (id: string): Promise<NotificationActionResponse> => {
+    const response = await api.patch<NotificationActionResponse>(
+      `/notifications/${id}/read`,
+    );
+    return response.data;
   },
 };
 
