@@ -304,7 +304,7 @@ export const ChatPage = () => {
                   isSocketConnected ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700',
                 )}
               >
-                {isSocketConnected ? 'Socket connected' : 'Socket disconnected'}
+                {isSocketConnected ? 'Đang hoạt động' : 'Không hoạt động'}
               </Badge>
             </div>
           </CardHeader>

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { logout } from '@/lib/auth';
 import { HeaderUserMenu } from '@/components/layout/HeaderUserMenu';
 import { useAppStore } from '@/store/useAppStore';
-import { useUnreadNotificationCount } from '@/hooks/use-notifications';
+import { useNotificationUnreadCount } from '@/hooks/use-notifications';
 import { authService } from '@/services/auth.service';
 import { getFcmToken } from '@/hooks/use-fcm-token';
 import { useLogout } from '@/hooks/use-auth';
@@ -33,7 +33,7 @@ export function PageHeader({
 }: PageHeaderProps) {
     const { toggleSidebar, user } = useAppStore();
     const navigate = useNavigate();
-    const { data: unreadCount = 0 } = useUnreadNotificationCount();
+    const { data: unreadCount = 0 } = useNotificationUnreadCount();
     const displayName = user?.fullName || 'Bác sĩ';
 
     const handleProfile = onProfile ?? (() => navigate('/doctor/profile'));

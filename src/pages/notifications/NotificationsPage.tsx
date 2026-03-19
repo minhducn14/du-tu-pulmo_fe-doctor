@@ -2,8 +2,8 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  useMarkAllNotificationsAsRead,
-  useMarkNotificationAsRead,
+  useMarkAllAsRead,
+  useMarkAsRead,
   useNotifications,
 } from '@/hooks/use-notifications';
 import { Bell, CheckCircle, Info, AlertTriangle } from 'lucide-react';
@@ -34,9 +34,9 @@ const getIcon = (type: string) => {
 };
 
 export default function NotificationsPage() {
-  const { data, isLoading } = useNotifications(1, 50);
-  const markAll = useMarkAllNotificationsAsRead();
-  const markOne = useMarkNotificationAsRead();
+  const { data, isLoading } = useNotifications({ page: 1, limit: 50 });
+  const markAll = useMarkAllAsRead();
+  const markOne = useMarkAsRead();
   const notifications = data?.items || [];
 
   const handleReadAll = async () => {
@@ -45,7 +45,7 @@ export default function NotificationsPage() {
   };
 
   const handleReadOne = async (item: NotificationItem) => {
-    if (item.status !== 'PENDING') return;
+    if (item.status !== 'UNREAD') return;
     await markOne.mutateAsync(item.id);
   };
 
@@ -73,7 +73,7 @@ export default function NotificationsPage() {
           <Card
             key={item.id}
             className={`transition-colors cursor-pointer ${
-              item.status === 'PENDING'
+              item.status === 'UNREAD'
                 ? 'bg-blue-50/50 border-blue-100'
                 : 'bg-white'
             }`}
@@ -85,7 +85,7 @@ export default function NotificationsPage() {
                 <div className="flex items-center justify-between">
                   <p
                     className={`font-medium text-sm ${
-                      item.status === 'PENDING' ? 'text-blue-900' : 'text-gray-900'
+                      item.status === 'UNREAD' ? 'text-blue-900' : 'text-gray-900'
                     }`}
                   >
                     {item.title}

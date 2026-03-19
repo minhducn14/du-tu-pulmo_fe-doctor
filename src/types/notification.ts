@@ -1,4 +1,10 @@
-export type NotificationStatus = "PENDING" | "ACTIVE" | "INACTIVE";
+export type NotificationStatus = "UNREAD" | "READ";
+
+export interface NotificationQuery {
+  page?: number;
+  limit?: number;
+  status?: NotificationStatus;
+}
 export type NotificationType = "GENERAL" | "PAYMENT" | "SYSTEM" | "APPOINTMENT";
 
 export interface NotificationItem {

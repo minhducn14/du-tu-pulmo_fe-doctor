@@ -11,6 +11,7 @@ import {
   useUpdateDoctorProfile,
   useUploadAvatar,
 } from '@/hooks/use-profile';
+import { useTestPushNotification } from '@/hooks/use-notifications';
 import type { ProfileFormValues } from '@/types/profile';
 import { toast } from 'sonner';
 
@@ -20,6 +21,7 @@ export const ProfilePage = () => {
   const { data: doctor } = useDoctorProfile(doctorId);
   const updateDoctor = useUpdateDoctorProfile();
   const uploadAvatar = useUploadAvatar();
+  const testPush = useTestPushNotification();
 
   const initialForm = useMemo<ProfileFormValues>(
     () => ({
@@ -151,6 +153,34 @@ export const ProfilePage = () => {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Thông báo thử nghiệm</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-gray-500">Gửi một thông báo đẩy để kiểm tra tính năng thông báo thời gian thực.</p>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await testPush.mutateAsync({
+                    title: '👨‍⚕️ Bác sĩ ơi!',
+                    content: 'Đây là thông báo thử nghiệm từ hệ thống Doctor Portal.'
+                  });
+                  toast.success('Đã gửi thông báo thử nghiệm');
+                } catch {
+                  toast.error('Không thể gửi thông báo thử nghiệm');
+                }
+              }}
+              disabled={testPush.isPending}
+            >
+              Gửi thông báo thử nghiệm
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

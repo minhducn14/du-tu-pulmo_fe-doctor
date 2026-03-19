@@ -3,6 +3,7 @@ import { getMessaging, onMessage } from 'firebase/messaging';
 import { requestForToken } from '@/config/firebase';
 import { authService } from '@/services/auth.service';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 let _fcmTokenSingleton: string | null = null;
 export const getFcmToken = () => _fcmTokenSingleton;
@@ -13,6 +14,7 @@ export const clearFcmToken = () => {
 
 export const useFcmToken = (isAuthenticated: boolean) => {
   const [fcmToken, setFcmToken] = useState<string | null>(_fcmTokenSingleton);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -49,13 +51,19 @@ export const useFcmToken = (isAuthenticated: boolean) => {
 
     const messaging = getMessaging();
     const unsubscribe = onMessage(messaging, (payload) => {
-      toast(payload?.notification?.title || payload?.data?.title, {
+      toast(payload?.notification?.title || payload?.data?.title || 'Thông báo mới', {
         description: payload?.notification?.body || payload?.data?.body
+      });
+
+      // Invalidate notification queries to update UI in "real-time"
+      queryClient.invalidateQueries({ 
+        queryKey: ['notifications'],
+        refetchType: 'all' 
       });
     });
 
     return () => unsubscribe();
-  }, [fcmToken]);
+  }, [fcmToken, queryClient]);
 
   return { fcmToken };
 };

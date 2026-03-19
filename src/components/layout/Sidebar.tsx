@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState } from 'react';
 import { getUser } from '@/lib/auth';
 import { Bell } from 'lucide-react';
-import { useUnreadNotificationCount } from '@/hooks/use-notifications';
+import { useNotificationUnreadCount } from '@/hooks/use-notifications';
 import {
     DashboardIcon,
     ReceptionIcon,
@@ -53,7 +53,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
     const [openSections, setOpenSections] = useState<string[]>(['phongKham', 'hoSo']);
     const user = getUser();
     const userRoles = user?.roles || [];
-    const { data: unreadCount = 0 } = useUnreadNotificationCount();
+    const { data: unreadCount = 0 } = useNotificationUnreadCount();
 
     // Check if user has required role
     const hasRole = (allowedRoles?: string[]) => {

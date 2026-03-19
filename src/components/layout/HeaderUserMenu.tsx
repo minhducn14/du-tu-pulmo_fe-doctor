@@ -46,7 +46,7 @@ export function NotificationIcon({
         >
             <Bell className="h-5 w-5" />
             {count > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-sm z-10 animate-in zoom-in duration-300">
                     {formatBadge(count)}
                 </span>
             )}

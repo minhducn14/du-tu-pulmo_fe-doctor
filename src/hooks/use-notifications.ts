@@ -1,43 +1,53 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import notificationService from '@/services/notification.service';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import notificationService from "@/services/notification.service";
+import { useAppStore } from "@/store/useAppStore";
+import type { NotificationQuery } from "@/types/notification";
 
-export const NOTIFICATION_KEYS = {
-  list: (page: number, limit: number) =>
-    ['notifications', 'list', page, limit] as const,
-  unread: ['notifications', 'unread-count'] as const,
+export const useNotifications = (query?: NotificationQuery) => {
+  const { user } = useAppStore();
+  return useQuery({
+    queryKey: ["notifications", query],
+    queryFn: () => notificationService.getNotifications(query),
+    enabled: !!user,
+  });
 };
 
-export function useNotifications(page = 1, limit = 20) {
+export const useNotificationUnreadCount = () => {
+  const { user } = useAppStore();
   return useQuery({
-    queryKey: NOTIFICATION_KEYS.list(page, limit),
-    queryFn: () => notificationService.getNotifications(page, limit),
-  });
-}
-
-export function useUnreadNotificationCount() {
-  return useQuery({
-    queryKey: NOTIFICATION_KEYS.unread,
+    queryKey: ["notifications", "unread-count"],
     queryFn: () => notificationService.getUnreadCount(),
+    enabled: !!user,
     refetchInterval: 30000,
+    staleTime: 0,
+    gcTime: 300000,
+    refetchOnMount: "always",
   });
-}
+};
 
-export function useMarkNotificationAsRead() {
+export const useMarkAsRead = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => notificationService.markAsRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
-}
+};
 
-export function useMarkAllNotificationsAsRead() {
+export const useMarkAllAsRead = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => notificationService.markAllAsRead(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
-}
+};
+
+export const useTestPushNotification = () => {
+  return useMutation({
+    mutationFn: ({ title, content }: { title: string; content: string }) =>
+      notificationService.testPushNotification(title, content),
+  });
+};
