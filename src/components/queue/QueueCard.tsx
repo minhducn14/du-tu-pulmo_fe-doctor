@@ -73,19 +73,19 @@ export function QueueCard({
             case AppointmentStatus.CONFIRMED:
                 return (
                     <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                        Chờ check-in
+                        {isVideoAppointment ? 'Sẵn sàng' : 'Chờ check-in'}
                     </Badge>
                 );
             case AppointmentStatus.CHECKED_IN:
                 return (
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        Đã check-in
+                        {isVideoAppointment ? 'Sẵn sàng' : 'Đã check-in'}
                     </Badge>
                 );
             case AppointmentStatus.IN_PROGRESS:
                 return (
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        <span className="animate-pulse mr-1">◉</span> Đang khám
+                        <span className="animate-pulse mr-1">◉</span> {isVideoAppointment ? 'Đang tư vấn' : 'Đang khám'}
                     </Badge>
                 );
             case AppointmentStatus.COMPLETED:

@@ -176,7 +176,7 @@ export default function QueueManagerPage() {
                             <p className="text-sm text-gray-500">Đang chờ</p>
                             <p className="text-2xl font-bold">{waitingCount}</p>
                             <p className="text-xs text-gray-500 mt-1">
-                                Đã check-in + Đã xác nhận
+                                Sẵn sàng + Đã xác nhận
                             </p>
                         </div>
                         <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
