@@ -48,7 +48,7 @@ export function OverviewPage() {
         return [
             { name: 'Bệnh nhân mới', value: stats.patients.new },
             { name: 'Bệnh nhân cũ', value: stats.patients.returning },
-        ].filter((d) => d.value > 0);
+        ];
     }, [stats]);
 
     const totalPatients = (stats?.patients.new ?? 0) + (stats?.patients.returning ?? 0);
