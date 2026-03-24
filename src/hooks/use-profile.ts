@@ -1,15 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import userService from '@/services/user.service';
-import doctorService from '@/services/doctor.service';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import userService from "@/services/user.service";
+import doctorService from "@/services/doctor.service";
 import type {
   UpdateDoctorProfileDto,
   UpdateUserProfileDto,
-} from '@/types/profile';
-import { useAppStore } from '@/store/useAppStore';
+} from "@/types/profile";
+import { useAppStore } from "@/store/useAppStore";
 
 export const PROFILE_KEYS = {
-  me: ['profile', 'me'] as const,
-  doctor: (doctorId: string) => ['profile', 'doctor', doctorId] as const,
+  me: ["profile", "me"] as const,
+  doctor: (doctorId: string) => ["profile", "doctor", doctorId] as const,
 };
 
 export function useMyProfile() {
@@ -21,7 +21,7 @@ export function useMyProfile() {
 
 export function useDoctorProfile(doctorId?: string) {
   return useQuery({
-    queryKey: PROFILE_KEYS.doctor(doctorId || ''),
+    queryKey: PROFILE_KEYS.doctor(doctorId || ""),
     queryFn: () => doctorService.getById(doctorId!),
     enabled: !!doctorId,
   });
@@ -50,14 +50,19 @@ export function useUpdateDoctorProfile() {
   const { setUser, user: currentUser } = useAppStore();
 
   return useMutation({
-    mutationFn: ({ doctorId, dto }: { doctorId: string; dto: UpdateDoctorProfileDto }) =>
-      doctorService.update(doctorId, dto),
+    mutationFn: ({
+      doctorId,
+      dto,
+    }: {
+      doctorId: string;
+      dto: UpdateDoctorProfileDto;
+    }) => doctorService.update(doctorId, dto),
     onSuccess: (doctor, variables) => {
       queryClient.invalidateQueries({
         queryKey: PROFILE_KEYS.doctor(doctor.id),
       });
       queryClient.invalidateQueries({ queryKey: PROFILE_KEYS.me });
-      
+
       if (variables.dto.fullName && currentUser) {
         setUser({
           ...currentUser,
@@ -74,13 +79,18 @@ export function useUploadAvatar() {
 
   return useMutation({
     mutationFn: (file: File) => userService.uploadAvatar(file),
-    onSuccess: (variables) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: PROFILE_KEYS.me });
+      if (currentUser?.doctorId) {
+        queryClient.invalidateQueries({
+          queryKey: PROFILE_KEYS.doctor(currentUser.doctorId),
+        });
+      }
 
       if (currentUser) {
         setUser({
           ...currentUser,
-          avatarUrl: variables.avatarUrl
+          avatarUrl: data.avatarUrl,
         });
       }
     },
