@@ -9,9 +9,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { Plus, Copy, Trash2, ChevronDown, Save } from 'lucide-react';
+import { Plus, Copy, Trash2, ChevronDown, Save, AlertCircle } from 'lucide-react';
 import { AppointmentType, ScheduleType } from '@/lib/constants';
 import type { DoctorSchedule, CreateScheduleDto, UpdateScheduleDto } from '@/types/schedule';
+import { useDeleteRegularSchedule } from '@/hooks/use-schedules';
+import { useAppStore } from '@/store/useAppStore';
+import { toast } from 'sonner';
 
 interface RegularScheduleModalProps {
     open: boolean;
@@ -70,11 +73,33 @@ const createEmptySlot = (): TimeSlotData => ({
     isDeleted: false,
 });
 
+// Helper: Kiểm tra chồng lấn thời gian
+const getOverlappingSlotIds = (slots: TimeSlotData[]): Set<string> => {
+    const activeSlots = slots.filter(s => !s.isDeleted);
+    const overlappingIds = new Set<string>();
+
+    for (let i = 0; i < activeSlots.length; i++) {
+        for (let j = i + 1; j < activeSlots.length; j++) {
+            const s1 = activeSlots[i];
+            const s2 = activeSlots[j];
+            if (s1.startTime < s2.endTime && s1.endTime > s2.startTime) {
+                overlappingIds.add(s1.tempId);
+                overlappingIds.add(s2.tempId);
+            }
+        }
+    }
+    return overlappingIds;
+};
+
 /**
  * Modal quản lý Lịch Làm Việc Cốt Định (Regular Schedule).
  * Cho phép thiết lập lịch theo từng ngày trong tuần, copy cấu hình từ ngày này sang ngày khác.
  */
 export function RegularScheduleModal({ open, onClose, schedules, onSave }: RegularScheduleModalProps) {
+    const { user } = useAppStore();
+    const doctorId = user?.doctorId || '';
+    const deleteRegular = useDeleteRegularSchedule();
+
     // Loại lịch làm việc đang chọn (Khám tại phòng / Tư vấn trực tuyến)
     const [appointmentType, setAppointmentType] = useState<AppointmentType>(AppointmentType.IN_CLINIC);
 
@@ -86,6 +111,28 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
     // State cho Popover Copy
     const [copyPopoverOpen, setCopyPopoverOpen] = useState<number | null>(null);
     const [copyTargets, setCopyTargets] = useState<number[]>([]);
+
+    // --- Validation computations ---
+    const overlapsByDay = new Map<number, Set<string>>();
+    let hasAnyOverlap = false;
+    let hasInvalidTime = false;
+
+    daysData.forEach(day => {
+        if (day.enabled) {
+            const overlaps = getOverlappingSlotIds(day.slots);
+            if (overlaps.size > 0) {
+                overlapsByDay.set(day.dayOfWeek, overlaps);
+                hasAnyOverlap = true;
+            }
+            day.slots.filter(s => !s.isDeleted).forEach(s => {
+                if (s.startTime >= s.endTime) {
+                    hasInvalidTime = true;
+                }
+            });
+        }
+    });
+
+    const isFormValid = !hasAnyOverlap && !hasInvalidTime && !saving;
 
     // Effect: Khởi tạo dữ liệu daysData từ props schedules khi modal mở
     useEffect(() => {
@@ -101,7 +148,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
             const daySchedules = filteredSchedules.filter(s => s.dayOfWeek === day.value);
             return {
                 dayOfWeek: day.value,
-                enabled: daySchedules.length > 0,
+                enabled: daySchedules.length > 0 && daySchedules.some(s => s.isAvailable),
                 slots: daySchedules.map(s => ({
                     id: s.id,
                     tempId: s.id,
@@ -164,17 +211,29 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
     };
 
     // Handler: Xóa một slot
-    const deleteSlot = (dayOfWeek: number, tempId: string) => {
+    const deleteSlot = async (dayOfWeek: number, tempId: string) => {
+        const dayToModify = daysData.find(d => d.dayOfWeek === dayOfWeek);
+        if (dayToModify) {
+            const slotToDelete = dayToModify.slots.find(s => s.tempId === tempId);
+            if (slotToDelete && slotToDelete.id && !slotToDelete.isNew) {
+                if (!confirm('Bạn có chắc chắn muốn xóa lịch này không? Hành động này sẽ xóa ngay lập tức khỏi hệ thống!')) return;
+                try {
+                    await deleteRegular.mutateAsync({ doctorId, id: slotToDelete.id });
+                    toast.success('Xóa khung giờ thành công!');
+                } catch (error) {
+                    toast.error('Có lỗi xảy ra khi xóa khung giờ.');
+                    return; // Stop local UI update if API fails
+                }
+            }
+        }
+
         setDaysData(prev => prev.map(d => {
             if (d.dayOfWeek === dayOfWeek) {
                 return {
                     ...d,
                     slots: d.slots.map(s => {
                         if (s.tempId === tempId) {
-                            if (s.isNew) {
-                                return null; // Nếu là slot mới (chưa lưu) thì xóa khỏi mảng
-                            }
-                            return { ...s, isDeleted: true }; // Nếu là slot đã có DB thì đánh dấu xóa soft
+                            return null;
                         }
                         return s;
                     }).filter(Boolean) as TimeSlotData[],
@@ -224,16 +283,28 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
 
             daysData.forEach(day => {
                 if (!day.enabled) {
-                    // Nếu ngày bị tắt -> Xóa tất cả lịch của ngày đó
+                    // Nếu ngày bị tắt -> Cập nhật isAvailable = false thay vì xóa
                     day.slots.forEach(s => {
-                        if (s.id) schedulesToDelete.push(s.id);
+                        if (s.id) {
+                            schedulesToUpdate.push({
+                                id: s.id,
+                                dayOfWeek: day.dayOfWeek,
+                                startTime: s.startTime,
+                                endTime: s.endTime,
+                                slotCapacity: s.slotCapacity,
+                                slotDuration: s.slotDuration,
+                                appointmentType,
+                                minimumBookingDays: s.minimumBookingDays,
+                                maxAdvanceBookingDays: s.maxAdvanceBookingDays,
+                                consultationFee: s.consultationFee || undefined,
+                                discountPercent: s.discountPercent || undefined,
+                                isAvailable: false
+                            });
+                        }
                     });
                 } else {
                     day.slots.forEach(slot => {
-                        if (slot.isDeleted && slot.id) {
-                            // Slot bị xóa
-                            schedulesToDelete.push(slot.id);
-                        } else if (slot.isNew && !slot.isDeleted) {
+                        if (slot.isNew && !slot.isDeleted) {
                             // Slot mới -> Thêm vào danh sách tạo
                             schedulesToCreate.push({
                                 dayOfWeek: day.dayOfWeek,
@@ -246,6 +317,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                 maxAdvanceBookingDays: slot.maxAdvanceBookingDays,
                                 consultationFee: slot.consultationFee || undefined,
                                 discountPercent: slot.discountPercent || undefined,
+                                isAvailable: true
                             });
                         } else if (slot.id && !slot.isDeleted) {
                             // Slot cũ -> Thêm vào danh sách update
@@ -261,6 +333,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                 maxAdvanceBookingDays: slot.maxAdvanceBookingDays,
                                 consultationFee: slot.consultationFee || undefined,
                                 discountPercent: slot.discountPercent || undefined,
+                                isAvailable: true
                             });
                         }
                     });
@@ -296,7 +369,8 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
             : 'data-[state=checked]:bg-green-600';
     };
 
-    const getSlotCardStyle = (isSaved: boolean) => {
+    const getSlotCardStyle = (isSaved: boolean, isOverlapping: boolean = false, isInvalidTime: boolean = false) => {
+        if (isOverlapping || isInvalidTime) return "bg-red-50 border-red-400 border-[1.5px]";
         if (!isSaved) return "bg-gray-50 border-gray-200 border-dashed";
 
         return appointmentType === AppointmentType.IN_CLINIC
@@ -339,7 +413,7 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button onClick={handleSave} disabled={saving} className={getTypeColor()}>
+                    <Button onClick={handleSave} disabled={!isFormValid} className={getTypeColor()}>
                         <Save className="mr-2 h-4 w-4" />
                         Áp dụng
                     </Button>
@@ -361,6 +435,12 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                         <div className="text-sm text-muted-foreground">
                                             {day.slots.filter(s => !s.isDeleted).length} khung giờ
                                         </div>
+                                        {overlapsByDay.has(day.dayOfWeek) && (
+                                            <div className="flex items-center text-red-500 text-sm mt-1 font-medium">
+                                                <AlertCircle className="w-4 h-4 mr-1" />
+                                                Có khung giờ chồng lấn
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -462,14 +542,23 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                             {/* --- Slots List --- */}
                             {day.enabled && (
                                 <div className="space-y-3">
-                                    {day.slots.filter(s => !s.isDeleted).map((slot) => (
-                                        <div key={slot.tempId} className={cn("border rounded-lg p-4 transition-colors", getSlotCardStyle(!!slot.id))}>
+                                    {day.slots.filter(s => !s.isDeleted).map((slot) => {
+                                        const isOverlapping = overlapsByDay.get(day.dayOfWeek)?.has(slot.tempId) || false;
+                                        const isInvalidTime = slot.startTime >= slot.endTime;
+                                        return (
+                                        <div key={slot.tempId} className={cn("border rounded-lg p-4 transition-colors", getSlotCardStyle(!!slot.id, isOverlapping, isInvalidTime))}>
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                     <span className={cn("px-2 py-1 rounded text-xs font-medium border", getBadgeStyle(!!slot.id))}>
                                                         {slot.id ? 'Đã lưu' : 'Mới'}
                                                     </span>
                                                     <span>1h • {slot.slotCapacity} lượt</span>
+                                                    {isInvalidTime && (
+                                                        <span className="text-red-500 text-xs font-semibold flex items-center ml-2">
+                                                            <AlertCircle className="w-4 h-4 mr-1" />
+                                                            Giờ kết thúc phải sau giờ bắt đầu
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div className="flex gap-1">
                                                     <Button
@@ -569,10 +658,11 @@ export function RegularScheduleModal({ open, onClose, schedules, onSave }: Regul
                                                             />
                                                         </div>
                                                     </div>
-                                                </CollapsibleContent>
-                                            </Collapsible>
-                                        </div>
-                                    ))}
+                                                    </CollapsibleContent>
+                                                </Collapsible>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

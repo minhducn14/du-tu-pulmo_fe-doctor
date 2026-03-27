@@ -25,6 +25,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { SafeRichText } from '@/components/common/SafeRichText';
 import AiAnalysisResult from '@/components/screening/AiAnalysisResult';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 export default function MedicalRecordDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -39,8 +41,6 @@ export default function MedicalRecordDetailPage() {
     const [isDownloadingRecord, setIsDownloadingRecord] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [isConfirmCloseOpen, setIsConfirmCloseOpen] = useState(false);
-    const [presentIllnessViewMode] = useState<'preview' | 'source'>('preview');
-
     const { data: record, isLoading, error } = useQuery({
         queryKey: ['medical-record', id],
         queryFn: () => medicalService.getDetail(id!),
@@ -594,26 +594,7 @@ export default function MedicalRecordDetailPage() {
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                                     Bệnh sử hiện tại / Quá trình bệnh lý
                                                 </label>
-                                                <div className="space-y-2">
-                                                    {/* <div className="flex items-center gap-2">
-                                                        <Button
-                                                            type="button"
-                                                            size="sm"
-                                                            variant={presentIllnessViewMode === 'preview' ? 'default' : 'outline'}
-                                                            onClick={() => setPresentIllnessViewMode('preview')}
-                                                        >
-                                                            Preview
-                                                        </Button>
-                                                        <Button
-                                                            type="button"
-                                                            size="sm"
-                                                            variant={presentIllnessViewMode === 'source' ? 'default' : 'outline'}
-                                                            onClick={() => setPresentIllnessViewMode('source')}
-                                                        >
-                                                            Source
-                                                        </Button>
-                                                    </div> */}
-                                                    {presentIllnessViewMode === 'preview' ? (
+                                                    {isFormDisabled ? (
                                                         <div className="min-h-[80px] rounded-md border border-gray-300 bg-gray-50 p-3">
                                                             <SafeRichText
                                                                 html={formData.presentIllness || ''}
@@ -621,15 +602,15 @@ export default function MedicalRecordDetailPage() {
                                                             />
                                                         </div>
                                                     ) : (
-                                                        <textarea
-                                                            value={formData.presentIllness || ''}
-                                                            onChange={(e) => handleInputChange('presentIllness', e.target.value)}
-                                                            rows={3}
-                                                            placeholder="Nhập quá trình bệnh lý..."
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                        />
+                                                        <div className="rounded-lg border border-gray-300 overflow-hidden bg-white">
+                                                            <ReactQuill
+                                                                theme="snow"
+                                                                value={formData.presentIllness || ''}
+                                                                onChange={(value) => handleInputChange('presentIllness', value)}
+                                                                placeholder="Nhập quá trình bệnh lý..."
+                                                            />
+                                                        </div>
                                                     )}
-                                                </div>
                                             </div>
                                         </div>
                                     </section>
@@ -1077,7 +1058,7 @@ export default function MedicalRecordDetailPage() {
 
                                         <section>
                                             <h3 className="text-base font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                                                Toàn bộ hồ sơ
+                                                Tổng kết hồ sơ
                                             </h3>
                                             <textarea
                                                 value={formData.fullRecordSummary || ''}

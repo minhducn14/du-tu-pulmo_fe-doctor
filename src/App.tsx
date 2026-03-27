@@ -11,7 +11,7 @@ const SchedulePage = lazy(() => import('@/pages/schedule/SchedulePage').then(mod
 const TimeSlotsPage = lazy(() => import('@/pages/schedule/TimeSlotsPage').then(module => ({ default: module.TimeSlotsPage })));
 
 // New Pages
-// const ReceptionPage = lazy(() => import('@/pages/reception/ReceptionPage'));
+const ReceptionPage = lazy(() => import('@/pages/reception/ReceptionPage'));
 const QueueManagerPage = lazy(() => import('@/pages/doctor/QueueManagerPage'));
 const InClinicExamPage = lazy(() => import('@/pages/doctor/encounters/InClinicExamPage'));
 const VideoExamPage = lazy(() => import('@/pages/doctor/encounters/VideoExamPage'));
@@ -74,7 +74,7 @@ function App() {
 
           {/* Protected Routes */}
           <Route path="/doctor" element={
-            <ProtectedRoute allowedRoles={['DOCTOR']}>
+            <ProtectedRoute allowedRoles={['DOCTOR', 'RECEPTIONIST', 'ADMIN']}>
               <DashboardLayout />
             </ProtectedRoute>
           }>
@@ -84,11 +84,11 @@ function App() {
             <Route path="overview" element={<OverviewPage />} />
 
             {/* Phòng Khám - Reception Only */}
-            {/* <Route path="reception" element={
-              <ProtectedRoute allowedRoles={['RECEPTIONIST']}>
+            <Route path="reception" element={
+              <ProtectedRoute allowedRoles={['RECEPTIONIST', 'DOCTOR']}>
                 <ReceptionPage />
               </ProtectedRoute>
-            } /> */}
+            } />
             <Route path="queue-manager" element={
               <ProtectedRoute allowedRoles={['DOCTOR']}>
                 <QueueManagerPage />

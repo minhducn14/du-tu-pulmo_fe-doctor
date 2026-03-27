@@ -101,6 +101,7 @@ export default function VideoExamPage() {
             saving={encounter.saving}
             autoSaveStatus={encounter.autoSaveStatus}
             autoSaveTime={encounter.autoSaveTime}
+            isDirty={encounter.isDirty}
             onUpdateRecord={encounter.updateRecord}
             onUpdateVitals={(field, value) => {
               encounter.setEditableVitals((prev) => ({
@@ -121,6 +122,7 @@ export default function VideoExamPage() {
             onSetFollowUpRequired={encounter.setFollowUpRequired}
             onSetNextAppointmentDate={encounter.setNextAppointmentDate}
             onPrescriptionsChange={encounter.setPrescriptions}
+            onUpdateLinking={encounter.updateLinking}
             headerRightSlot={
               <Button
                 variant="outline"

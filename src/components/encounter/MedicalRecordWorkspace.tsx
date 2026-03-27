@@ -21,6 +21,8 @@ import { PrescriptionEditor, type PrescriptionEditorHandle } from '@/components/
 import { medicalService } from '@/services/medical.service';
 import { toast } from 'sonner';
 import { SafeRichText } from '@/components/common/SafeRichText';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 interface MedicalRecordWorkspaceProps {
     // Data
@@ -39,6 +41,7 @@ interface MedicalRecordWorkspaceProps {
     saving: boolean;
     autoSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
     autoSaveTime?: Date | null;
+    isDirty?: boolean;
 
     // Actions
     onUpdateRecord: (field: keyof MedicalRecord, value: unknown) => void;
@@ -114,6 +117,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
     saving,
     autoSaveStatus,
     autoSaveTime,
+    isDirty,
     onUpdateRecord,
     onUpdateVitals,
     onSaveVitalSigns,
@@ -132,7 +136,6 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
     const navigate = useNavigate();
     const user = getUser();
     const [activeTab, setActiveTab] = useState<string>('info');
-    const [presentIllnessViewMode] = useState<'preview' | 'source'>('preview');
     const [savingVitals, setSavingVitals] = useState(false);
 
     // Use props directly
@@ -263,6 +266,11 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
 
     const ensureSavedBeforeProceed = async () => {
         try {
+            // Save medical record draft first if dirty to avoid local state being overwritten by subsequent refetches
+            if (isDirty) {
+                await onSaveDraft();
+            }
+
             if (hasVitalsInput()) {
                 if (!vitalSigns || vitalSignsChanged) {
                     await onSaveVitalSigns();
@@ -523,7 +531,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                                                         variant="outline"
                                                         size="sm"
                                                         className="h-8 border-blue-600 text-blue-600 hover:bg-blue-50"
-                                                        onClick={() => onUpdateLinking(medicalRecord.suggestedPreviousRecord!)}
+                                                        onClick={() => onUpdateLinking?.(medicalRecord.suggestedPreviousRecord!)}
                                                         disabled={!canEdit}
                                                     >
                                                         <Link className="h-3.5 w-3.5 mr-1" />
@@ -675,25 +683,7 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                             <Section title="HỎI BỆNH">
                                 <Field label="Quá trình bệnh lý">
                                     <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            {/* <Button
-                                                type="button"
-                                                size="sm"
-                                                variant={presentIllnessViewMode === 'preview' ? 'default' : 'outline'}
-                                                onClick={() => setPresentIllnessViewMode('preview')}
-                                            >
-                                                Preview
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant={presentIllnessViewMode === 'source' ? 'default' : 'outline'}
-                                                onClick={() => setPresentIllnessViewMode('source')}
-                                            >
-                                                Source
-                                            </Button> */}
-                                        </div>
-                                        {presentIllnessViewMode === 'preview' ? (
+                                        {!canEdit ? (
                                             <div className="min-h-[120px] rounded-md border border-slate-200 bg-slate-50 p-3">
                                                 <SafeRichText
                                                     html={medicalRecord?.presentIllness || ''}
@@ -701,13 +691,14 @@ export const MedicalRecordWorkspace = React.memo(function MedicalRecordWorkspace
                                                 />
                                             </div>
                                         ) : (
-                                            <Textarea
-                                                value={medicalRecord?.presentIllness || ''}
-                                                placeholder="Mô tả diễn tiến bệnh..."
-                                                onChange={(e) => onUpdateRecord('presentIllness', e.target.value)}
-                                                disabled={!canEdit}
-                                                className="min-h-[120px]"
-                                            />
+                                            <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
+                                                <ReactQuill
+                                                    theme="snow"
+                                                    value={medicalRecord?.presentIllness || ''}
+                                                    onChange={(value) => onUpdateRecord('presentIllness', value)}
+                                                    placeholder="Mô tả diễn tiến bệnh..."
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                 </Field>

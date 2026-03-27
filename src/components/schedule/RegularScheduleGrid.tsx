@@ -105,16 +105,19 @@ export function RegularScheduleGrid({ schedules, onEdit }: RegularScheduleGridPr
                                     <div
                                         key={schedule.id}
                                         className={cn(
-                                            "p-2 rounded-md text-sm",
-                                            style.bg,
-                                            style.border,
-                                            style.text
+                                            "p-2 rounded-md text-sm relative",
+                                            !schedule.isAvailable ? "bg-gray-100 border-l-4 border-l-gray-400 text-gray-500 opacity-75" : [style.bg, style.border, style.text]
                                         )}
                                     >
-                                        <div className="font-medium">{style.label}</div>
+                                        <div className="font-medium flex justify-between items-start gap-1">
+                                            <span>{style.label}</span>
+                                            {!schedule.isAvailable && (
+                                                <span className="text-[10px] font-bold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">Tắt</span>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-1 text-xs opacity-80 mt-1">
                                             <Clock className="w-3 h-3" />
-                                            <span>
+                                            <span className={!schedule.isAvailable ? "line-through" : ""}>
                                                 {schedule.startTime.slice(0, 5)} - {schedule.endTime.slice(0, 5)}
                                             </span>
                                         </div>

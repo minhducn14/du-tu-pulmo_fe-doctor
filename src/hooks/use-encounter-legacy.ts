@@ -95,37 +95,47 @@ export function useEncounterLegacy(appointmentId: string) {
     setPrescriptions(prescData || []);
     
     if (recordData) {
-        const normalized: MedicalRecord = {
-            ...recordData,
-            id: recordData.id,
-            currentMedications: normalizeStringArray(recordData.currentMedications),
-            allergies: normalizeStringArray(recordData.allergies),
-            chronicDiseases: normalizeStringArray(recordData.chronicDiseases),
-            surgicalHistory: recordData.surgicalHistory,
-            familyHistory: recordData.familyHistory,
-            smokingStatus: normalizeBoolean((recordData as any).smokingStatus),
-            alcoholConsumption: normalizeBoolean((recordData as any).alcoholConsumption),
-            previousRecordId: recordData.previousRecordId,
-            suggestedPreviousRecordId: recordData.suggestedPreviousRecordId,
-            previousRecord: recordData.previousRecord,
-            suggestedPreviousRecord: recordData.suggestedPreviousRecord,
-        } as unknown as MedicalRecord;
-        setMedicalRecord(normalized);
+        setMedicalRecord(prev => {
+            // Only overwrite from server if not dirty
+            if (isDirty && prev && prev.id === recordData.id) {
+                return prev;
+            }
+
+            const normalized: MedicalRecord = {
+                ...recordData,
+                id: recordData.id,
+                currentMedications: normalizeStringArray(recordData.currentMedications),
+                allergies: normalizeStringArray(recordData.allergies),
+                chronicDiseases: normalizeStringArray(recordData.chronicDiseases),
+                surgicalHistory: recordData.surgicalHistory,
+                familyHistory: recordData.familyHistory,
+                smokingStatus: normalizeBoolean((recordData as any).smokingStatus),
+                alcoholConsumption: normalizeBoolean((recordData as any).alcoholConsumption),
+                previousRecordId: recordData.previousRecordId,
+                suggestedPreviousRecordId: recordData.suggestedPreviousRecordId,
+                previousRecord: recordData.previousRecord,
+                suggestedPreviousRecord: recordData.suggestedPreviousRecord,
+            } as unknown as MedicalRecord;
+            return normalized;
+        });
     } else {
-        setMedicalRecord({
-            id: '',
-            appointmentId,
-            patientId: apptData.patient?.id || apptData.patientId || '',
-            doctorId: apptData.doctor?.id ?? apptData.doctorId ?? null,
-            recordNumber: '',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            signedStatus: 'NOT_SIGNED',
-            smokingStatus: false,
-            alcoholConsumption: false,
-            recordType: '',
-            status: 'DRAFT',
-        } as any as MedicalRecord);
+        setMedicalRecord(prev => {
+            if (isDirty && prev && prev.id === '') return prev;
+            return {
+                id: '',
+                appointmentId,
+                patientId: apptData.patient?.id || apptData.patientId || '',
+                doctorId: apptData.doctor?.id ?? apptData.doctorId ?? null,
+                recordNumber: '',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                signedStatus: 'NOT_SIGNED',
+                smokingStatus: false,
+                alcoholConsumption: false,
+                recordType: '',
+                status: 'DRAFT',
+            } as any as MedicalRecord;
+        });
     }
 
     let latest: VitalSign | null = null;
@@ -152,18 +162,22 @@ export function useEncounterLegacy(appointmentId: string) {
 
     if (latest) {
         setVitalSigns(latest);
-        setEditableVitals({
-            height: latest.height,
-            weight: latest.weight,
-            temperature: latest.temperature,
-            bloodPressure: latest.bloodPressure,
-            heartRate: latest.heartRate,
-            respiratoryRate: latest.respiratoryRate,
-            spo2: latest.spo2,
+        // Only update editable vitals if not currently being changed by user
+        setEditableVitals(prev => {
+            if (vitalSignsChanged) return prev;
+            return {
+                height: latest.height,
+                weight: latest.weight,
+                temperature: latest.temperature,
+                bloodPressure: latest.bloodPressure,
+                heartRate: latest.heartRate,
+                respiratoryRate: latest.respiratoryRate,
+                spo2: latest.spo2,
+            };
         });
     }
 
-  }, [encounterData, appointmentId]);
+  }, [encounterData, appointmentId, isDirty, vitalSignsChanged]);
 
   const isLocked = appointment 
     ? ['COMPLETED', 'SIGNED', 'CANCELLED'].includes(appointment.status) 
@@ -243,6 +257,9 @@ export function useEncounterLegacy(appointmentId: string) {
       previousRecord: record
     } : null);
     setIsDirty(true);
+    if (record) {
+      toast.success('Đã chọn hồ sơ: ' + (record.recordNumber || 'Hồ sơ gần nhất'));
+    }
   }, []);
 
   const updateFollowUpRequired = useCallback((value: boolean) => {
@@ -399,6 +416,7 @@ export function useEncounterLegacy(appointmentId: string) {
     vitalSignsChanged,
     followUpRequired,
     nextAppointmentDate,
+    isDirty,
     
     isLocked,
     canEdit,

@@ -140,7 +140,7 @@ export const SchedulePage = () => {
                         doctorId,
                         id: selectedSchedule.id,
                         data: {
-                            specificDate: data.effectiveFrom || '',
+                            // specificDate: data.effectiveFrom || '',
                             startTime: data.startTime,
                             endTime: data.endTime,
                             slotDuration: data.slotDuration,
@@ -156,7 +156,7 @@ export const SchedulePage = () => {
                         doctorId,
                         id: selectedSchedule.id,
                         data: {
-                            specificDate: data.effectiveFrom || '',
+                            // specificDate: data.effectiveFrom || '',
                             startTime: data.startTime,
                             endTime: data.endTime,
                             note: data.note

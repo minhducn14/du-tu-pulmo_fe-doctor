@@ -82,7 +82,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             href: '/doctor/reception',
             icon: ReceptionIcon,
             description: 'Check-in bệnh nhân',
-            allowedRoles: ['RECEPTIONIST'],
+            allowedRoles: ['RECEPTIONIST', 'DOCTOR'],
         },
         {
             name: 'Hàng Đợi Khám',

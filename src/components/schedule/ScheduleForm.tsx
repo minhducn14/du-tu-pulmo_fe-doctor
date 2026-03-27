@@ -297,7 +297,7 @@ export function ScheduleForm({ open, onClose, onSubmit, schedule, scheduleType }
                                 <span className="mt-0.5">⚠️</span>
                                 <div>
                                     <p className="font-medium">Lưu ý</p>
-                                    <p>Khách hàng sẽ không thể đặt lịch khám hoặc tư vấn vào khung giờ nghỉ. Các lịch đã được bệnh nhân đặt trước đó cũng sẽ bị hủy.</p>
+                                    <p>Khách hàng sẽ không thể đặt lịch khám hoặc tư vấn vào khung giờ nghỉ. Các lịch trùng khung giờ nghỉ sẽ bị hủy.</p>
                                 </div>
                             </div>
                         </div>
