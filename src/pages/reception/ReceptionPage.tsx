@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AppointmentStatus } from '@/types/appointment';
 import { format } from 'date-fns';
-import { SearchIcon, CheckCircleIcon, UserIcon } from 'lucide-react';
+import { SearchIcon, CheckCircleIcon, UserIcon, QrCode } from 'lucide-react';
+import { QrScannerModal } from '@/components/appointment/QrScannerModal';
 import {
     Table,
     TableBody,
@@ -20,7 +21,8 @@ import { Badge } from '@/components/ui/badge';
 export const ReceptionPage = () => {
     const [search, setSearch] = useState('');
     const [checkInLoading, setCheckInLoading] = useState<string | null>(null);
-    const { checkInAsync } = useEncounterActions();
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const { checkInAsync, checkInByNumberAsync } = useEncounterActions();
 
     const { data: appointmentData, isLoading: loading, refetch } = useSearchAppointments({
         search,
@@ -42,6 +44,16 @@ export const ReceptionPage = () => {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         refetch();
+    };
+
+    const handleQrScan = async (result: string) => {
+        // Result should be the appointmentNumber
+        try {
+            await checkInByNumberAsync(result);
+            refetch(); // Refresh list to show updated status
+        } catch (error) {
+            // Error is handled by the hook's toast
+        }
     };
 
     const getStatusBadge = (status: AppointmentStatus) => {
@@ -68,6 +80,15 @@ export const ReceptionPage = () => {
             <PageHeader
                 title="Tiếp nhận bệnh nhân"
                 subtitle="Check-in và tiếp nhận bệnh nhân mới"
+                rightSlot={
+                    <Button 
+                        onClick={() => setIsScannerOpen(true)}
+                        className="bg-purple-600 hover:bg-purple-700 shadow-md transition-all active:scale-95"
+                    >
+                        <QrCode className="mr-2 h-4 w-4" />
+                        Quét mã QR
+                    </Button>
+                }
             />
 
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
@@ -162,6 +183,12 @@ export const ReceptionPage = () => {
                     </TableBody>
                 </Table>
             </div>
+
+            <QrScannerModal
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onResult={handleQrScan}
+            />
         </div>
     );
 };

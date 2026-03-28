@@ -20,6 +20,17 @@ export function useEncounterActions() {
     }
   });
 
+  const checkInByNumberMutation = useMutation({
+    mutationFn: (number: string) => appointmentService.checkInByNumber({ appointmentNumber: number }),
+    onSuccess: (data) => {
+      toast.success(`Check-in thành công cho #${data.appointmentNumber}`);
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Lỗi khi check-in bằng mã số');
+    }
+  });
+
   const startExamMutation = useMutation({
     mutationFn: (params: StartExamParams) => appointmentService.startExamination(params.id),
     onSuccess: (_data, params) => {
@@ -40,9 +51,13 @@ export function useEncounterActions() {
     checkIn: checkInMutation.mutate,
     checkInAsync: checkInMutation.mutateAsync,
     isCheckingIn: checkInMutation.isPending,
+
+    checkInByNumber: checkInByNumberMutation.mutate,
+    checkInByNumberAsync: checkInByNumberMutation.mutateAsync,
+    isCheckingInByNumber: checkInByNumberMutation.isPending,
     
     startExam: startExamMutation.mutate,
     startExamAsync: startExamMutation.mutateAsync,
     isStartingExam: startExamMutation.isPending,
   };
-}
+};

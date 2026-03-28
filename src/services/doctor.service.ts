@@ -17,6 +17,11 @@ export const doctorService = {
     const response = await api.patch<DoctorProfile>(`${BASE_URL}/${doctorId}`, dto);
     return response.data;
   },
+
+  getPublicDoctors: async (params?: any): Promise<{ items: DoctorProfile[]; meta: any }> => {
+    const response = await api.get<{ data: { items: DoctorProfile[]; meta: any } }>('/public/doctors', { params });
+    return response.data.data;
+  },
 };
 
 export default doctorService;

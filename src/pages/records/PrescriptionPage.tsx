@@ -84,7 +84,10 @@ export default function PrescriptionPage() {
                 </div>
                 <Button 
                     className="bg-blue-600 hover:bg-blue-700 shadow-sm"
-                    onClick={() => navigate('/records/prescriptions/new')}
+                    onClick={() => {
+                        toast.info('Để kê đơn thuốc mới, vui lòng bắt đầu phiên khám từ Hàng đợi khám');
+                        navigate('/doctor/queue-manager');
+                    }}
                 >
                     <Plus className="h-4 w-4 mr-2" />
                     Kê đơn mới
@@ -144,7 +147,7 @@ export default function PrescriptionPage() {
                                         <TableRow 
                                             key={prescription.id} 
                                             className="hover:bg-blue-50/30 transition-colors border-slate-50 cursor-pointer group"
-                                            onClick={() => navigate(`/records/prescriptions/${prescription.id}`)}
+                                            onClick={() => navigate(`/doctor/prescriptions/${prescription.id}`)}
                                         >
                                             <TableCell className="font-medium text-blue-600">
                                                 {prescription.prescriptionNumber}

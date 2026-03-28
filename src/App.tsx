@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 
 // Lazy Load Components
 const DashboardLayout = lazy(() => import('@/components/layout/DashboardLayout').then(module => ({ default: module.DashboardLayout })));
@@ -78,14 +79,14 @@ function App() {
               <DashboardLayout />
             </ProtectedRoute>
           }>
-            <Route index element={<Navigate to="/doctor/overview" replace />} />
+            <Route index element={<RoleBasedRedirect />} />
 
             {/* Dashboard */}
             <Route path="overview" element={<OverviewPage />} />
 
             {/* Phòng Khám - Reception Only */}
             <Route path="reception" element={
-              <ProtectedRoute allowedRoles={['RECEPTIONIST', 'DOCTOR']}>
+              <ProtectedRoute allowedRoles={['RECEPTIONIST']}>
                 <ReceptionPage />
               </ProtectedRoute>
             } />

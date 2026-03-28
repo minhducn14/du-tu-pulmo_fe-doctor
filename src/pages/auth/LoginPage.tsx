@@ -37,7 +37,14 @@ export default function LoginPage() {
                     setUser(userWithRoles);
 
                     toast.success('Đăng nhập thành công!');
-                    navigate('/doctor');
+                    
+                    // Role-based navigation
+                    const isReceptionist = userWithRoles.roles?.includes('RECEPTIONIST');
+                    if (isReceptionist) {
+                        navigate('/doctor/reception');
+                    } else {
+                        navigate('/doctor/overview');
+                    }
                 }
             },
             onError: (error: any) => {

@@ -27,7 +27,10 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { appointmentService } from "@/services/appointment.service";
-import { useQuery } from "@tanstack/react-query";
+import { doctorService } from "@/services/doctor.service";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAppStore } from "@/store/useAppStore";
+import type { DoctorProfile } from "@/types/profile";
 import {
   Search,
   Calendar as CalendarIcon,
@@ -44,6 +47,13 @@ import {
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { AppointmentStatus } from "@/lib/constants";
+import { CancelAppointmentModal } from "@/components/appointment/CancelAppointmentModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const formatTime = (value: string) =>
   new Date(value).toLocaleTimeString("vi-VN", {
@@ -60,12 +70,17 @@ const formatDate = (value: string) =>
 
 export const AppointmentManagementPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const location = useLocation();
   const isTodayPath = location.pathname === "/doctor/today";
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [payment, setPayment] = useState<string>("all");
+  const [doctorId, setDoctorId] = useState<string>("all");
+  
+  const { user } = useAppStore() as any;
+  const isStaff = user?.roles?.includes("RECEPTIONIST") || user?.roles?.includes("ADMIN");
   
   // Set default dates based on path
   const [startDate, setStartDate] = useState<Date | undefined>(
@@ -77,6 +92,20 @@ export const AppointmentManagementPage = () => {
   
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+
+  const [selectedAppointment, setSelectedAppointment] = useState<{
+    id: string;
+    number: string;
+  } | null>(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
+  // Fetch doctors for filter if staff
+  const { data: doctorsData } = useQuery({
+    queryKey: ["doctors", "public"],
+    queryFn: () => doctorService.getPublicDoctors({ limit: 100 }),
+    enabled: isStaff,
+  });
+  const doctors = doctorsData?.items || [];
 
 
   const { data, isLoading } = useQuery({
@@ -92,15 +121,21 @@ export const AppointmentManagementPage = () => {
       page,
       limit,
     ],
-    queryFn: () =>
-      appointmentService.getAppointments({
+    queryFn: () => {
+      const params: any = {
         search,
         status: status === "all" ? undefined : (status as AppointmentStatus),
         startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
         endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
+        doctorId: doctorId === "all" ? undefined : doctorId,
         page,
         limit,
-      }),
+      };
+      
+      return isStaff 
+        ? appointmentService.getAll(params)
+        : appointmentService.getAppointments(params);
+    },
   });
 
   const appointments = data?.items || [];
@@ -193,6 +228,18 @@ export const AppointmentManagementPage = () => {
       default:
         return <Badge className={`${baseClass}`}>{status}</Badge>;
     }
+  };
+
+  const handleCancelClick = (e: React.MouseEvent, id: string, number: string) => {
+    e.stopPropagation();
+    setSelectedAppointment({ id, number });
+    setIsCancelModalOpen(true);
+  };
+
+  const isCancellable = (apptStatus: string) => {
+    return ["PENDING", "PENDING_PAYMENT", "CONFIRMED", "CHECKED_IN"].includes(
+      apptStatus
+    );
   };
 
   return (
@@ -364,6 +411,33 @@ export const AppointmentManagementPage = () => {
             </Select>
           </div>
 
+          {isStaff && (
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-medium text-gray-500 ml-1">
+                Bác sĩ
+              </span>
+              <Select 
+                value={doctorId} 
+                onValueChange={(v) => {
+                  setDoctorId(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[160px] h-9 bg-white text-sm">
+                  <SelectValue placeholder="Tất cả bác sĩ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả bác sĩ</SelectItem>
+                  {doctors.map((doc: DoctorProfile) => (
+                    <SelectItem key={doc.id} value={doc.id}>
+                      BS. {doc.fullName || doc.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <Button 
               variant="outline" 
@@ -372,6 +446,7 @@ export const AppointmentManagementPage = () => {
                 setSearch("");
                 setStatus("all");
                 setPayment("all");
+                setDoctorId("all");
                 setStartDate(isTodayPath ? new Date() : undefined);
                 setEndDate(isTodayPath ? new Date() : undefined);
                 setPage(1);
@@ -395,6 +470,9 @@ export const AppointmentManagementPage = () => {
                 <TableHead className="w-[140px] text-[11px] uppercase font-semibold text-gray-500">Trạng thái</TableHead>
                 <TableHead className="w-[100px] text-[11px] uppercase font-semibold text-gray-500">Mã LH</TableHead>
                 <TableHead className="text-[11px] uppercase font-semibold text-gray-500">Họ và tên</TableHead>
+                {isStaff && (
+                  <TableHead className="text-[11px] uppercase font-semibold text-gray-500">Bác sĩ</TableHead>
+                )}
                 <TableHead className="text-[11px] uppercase font-semibold text-gray-500">Loại</TableHead>
                 <TableHead className="text-[11px] uppercase font-semibold text-gray-500">Ngày khám</TableHead>
                 <TableHead className="text-[11px] uppercase font-semibold text-gray-500 text-center">Giờ khám</TableHead>
@@ -444,6 +522,11 @@ export const AppointmentManagementPage = () => {
                     <TableCell className="py-3 font-medium whitespace-nowrap text-gray-900 hover:text-blue-600 hover:underline">
                       {appt.patient?.user?.fullName}
                     </TableCell>
+                    {isStaff && (
+                      <TableCell className="py-3 text-gray-600 whitespace-nowrap">
+                        BS. {appt.doctor?.fullName || (appt as any).doctorProfile?.user?.fullName || "—"}
+                      </TableCell>
+                    )}
                     <TableCell className="py-3">
                       {appt.appointmentType === "VIDEO" ? (
                         <div className="flex items-center gap-1.5 text-green-600 bg-green-50 px-2 py-0.5 rounded-full w-fit">
@@ -491,9 +574,42 @@ export const AppointmentManagementPage = () => {
                       )}
                     </TableCell>
                     <TableCell className="py-3 text-right">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400">
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-gray-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/doctor/appointments/${appt.id}`);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+
+                        {isCancellable(appt.status) && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-gray-400"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                                onClick={(e) => handleCancelClick(e, appt.id, appt.appointmentNumber)}
+                              >
+                                Hủy lịch hẹn
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -573,6 +689,16 @@ export const AppointmentManagementPage = () => {
           </div>
         </div>
       </div>
+
+      <CancelAppointmentModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        appointmentId={selectedAppointment?.id || ""}
+        appointmentNumber={selectedAppointment?.number || ""}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["appointments"] });
+        }}
+      />
     </div>
   );
 };

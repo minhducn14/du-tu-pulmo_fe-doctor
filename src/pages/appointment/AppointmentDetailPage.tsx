@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,13 +14,13 @@ import {
     Video,
     User,
     Phone,
-    Stethoscope,
     CreditCard,
     FileText,
 } from 'lucide-react';
 import { appointmentService } from '@/services/appointment.service';
 import type { Appointment } from '@/types/appointment';
 import { SafeRichText } from '@/components/common/SafeRichText';
+import { CancelAppointmentModal } from '@/components/appointment/CancelAppointmentModal';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
     PENDING: { label: 'Chờ xác nhận', color: 'bg-orange-100 text-orange-700' },
@@ -64,6 +65,8 @@ function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value
 export const AppointmentDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
     const { data: appt, isLoading } = useQuery<Appointment>({
         queryKey: ['appointment', id],
@@ -72,15 +75,8 @@ export const AppointmentDetailPage = () => {
     });
 
     const status = STATUS_MAP[appt?.status ?? ''];
-    const canStartExam = appt?.status === 'CHECKED_IN' || appt?.status === 'CONFIRMED';
 
-    const handleStartExam = () => {
-        if (!appt) return;
-        const route = appt.appointmentType === 'VIDEO'
-            ? `/doctor/encounters/${appt.id}/video`
-            : `/doctor/encounters/${appt.id}/in-clinic`;
-        navigate(route);
-    };
+    const isCancellable = appt && ["PENDING", "PENDING_PAYMENT", "CONFIRMED", "CHECKED_IN"].includes(appt.status);
 
     if (isLoading) {
         return (
@@ -122,12 +118,17 @@ export const AppointmentDetailPage = () => {
                 }
                 subtitle={`Tạo lúc ${formatDateTime(appt.createdAt)}`}
                 rightSlot={
-                    canStartExam ? (
-                        <Button onClick={handleStartExam} className="bg-blue-600 hover:bg-blue-700">
-                            <Stethoscope className="h-4 w-4 mr-2" />
-                            Bắt đầu khám
-                        </Button>
-                    ) : undefined
+                    <div className="flex gap-2">
+                        {isCancellable && (
+                            <Button
+                                variant="outline"
+                                className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 font-medium"
+                                onClick={() => setIsCancelModalOpen(true)}
+                            >
+                                Hủy lịch hẹn
+                            </Button>
+                        )}
+                    </div>
                 }
             />
 
@@ -229,6 +230,17 @@ export const AppointmentDetailPage = () => {
                     </Card>
                 )}
             </div>
+
+            <CancelAppointmentModal
+                isOpen={isCancelModalOpen}
+                onClose={() => setIsCancelModalOpen(false)}
+                appointmentId={appt.id}
+                appointmentNumber={appt.appointmentNumber}
+                onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['appointment', id] });
+                    queryClient.invalidateQueries({ queryKey: ['appointments'] });
+                }}
+            />
         </div>
     );
 };
