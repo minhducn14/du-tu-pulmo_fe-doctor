@@ -361,6 +361,12 @@ export function useEncounterLegacy(appointmentId: string) {
         await completeMutation.mutateAsync({
             id: appointmentId,
             dto: {
+                chiefComplaint: medicalRecord?.chiefComplaint,
+                physicalExamNotes: medicalRecord?.physicalExamNotes,
+                assessment: medicalRecord?.assessment,
+                diagnosis: medicalRecord?.diagnosis,
+                treatmentPlan: medicalRecord?.treatmentPlan,
+                followUpInstructions: medicalRecord?.followUpInstructions,
                 followUpRequired,
                 nextAppointmentDate: nextAppointmentDate || undefined,
             }

@@ -80,6 +80,17 @@ export type DecisionSourceEnum = typeof DecisionSourceEnum[keyof typeof Decision
 // MEDICAL RECORD TYPES - Matched with BE entity + MedicalRecordDetailResponseDto
 // ============================================================================
 
+export interface MedicalRecordAddendum {
+  id: string;
+  doctorId: string | null;
+  doctorName?: string;
+  reason: string;
+  content: string;
+  signedStatus: SignedStatusEnum;
+  signedAt?: string | Date | null;
+  createdAt: string | Date;
+}
+
 export interface LinkRecordInfo {
   id: string;
   recordNumber: string;
@@ -175,6 +186,7 @@ export interface MedicalRecord {
   // Relations (loaded from BE)
   vitalSigns?: VitalSign[];
   prescriptions?: Prescription[];
+  addenda?: MedicalRecordAddendum[];
   
   // Status
   status: MedicalRecordStatusEnum;
@@ -390,7 +402,6 @@ export interface MedicalRecordDetailResponse {
     height?: number;
     bmi?: number;
     spo2?: number;
-    spO2?: number;
   };
   
   // Physical Exam
@@ -873,7 +884,7 @@ export interface PatientMedicalHistory {
 // SIGNING DTO
 // ============================================================================
 export interface SignMedicalRecordDto {
-  recordIds?: string[];
-  signature?: string;
+  signature: string;
   notes?: string;
+  contentHash?: string;
 }

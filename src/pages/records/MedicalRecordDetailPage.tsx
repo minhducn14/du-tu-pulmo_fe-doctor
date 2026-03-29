@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAppStore } from '@/store/useAppStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, Download, Printer, Save, Calendar, FileCheck, Loader2, History } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { toast } from 'sonner';
 import { printPdfFromUrl } from '@/lib/print-utils';
+import { computeRecordHash } from '@/utils/signing';
 import {
     MedicalRecordStatusEnum,
     type UpdateMedicalRecordDto,
@@ -32,6 +34,7 @@ export default function MedicalRecordDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { user: currentUser } = useAppStore();
 
     const [activeTab, setActiveTab] = useState('medical-record');
     const [selectedPrescription, setSelectedPrescription] = useState<{ id?: string; pdfUrl?: string } | null>(null);
@@ -223,8 +226,11 @@ export default function MedicalRecordDetailPage() {
 
     // Sign Medical Record Mutation
     const signMutation = useMutation({
-        mutationFn: () => {
-            return medicalService.signMedicalRecord(id!, { recordIds: [id!] });
+        mutationFn: (variables: { signature: string; contentHash: string }) => {
+            return medicalService.signMedicalRecord(id!, {
+                signature: variables.signature,
+                contentHash: variables.contentHash
+            });
         },
         onSuccess: () => {
             toast.success('Ký số thành công');
@@ -285,10 +291,65 @@ export default function MedicalRecordDetailPage() {
         }
     };
 
-    const handleSign = () => {
-        if (!record) return;
+    const handleSign = async () => {
+        if (!record || !currentUser) return;
+
+        // 0. Kiểm tra quyền sở hữu (BE đã check, bổ sung FE cho UX)
+        if (currentUser.doctorId !== record.doctor.id) {
+            toast.error('Bạn không có quyền ký số cho bệnh án này.');
+            return;
+        }
+
+        // 1. Kiểm tra trạng thái hồ sơ phải là COMPLETED mới được ký
+        if (record.status !== MedicalRecordStatusEnum.COMPLETED) {
+            toast.error('Bạn cần "Đóng bệnh án" trước khi thực hiện ký số.');
+            return;
+        }
+
         if (confirm('Bạn có chắc chắn muốn ký số bệnh án này? Hành động này không thể hoàn tác.')) {
-            signMutation.mutate();
+            try {
+                // 1. Nếu có thay đổi chưa lưu, thực hiện lưu trước
+                if (isDirty) {
+                    const saved = await handleSave();
+                    if (!saved) {
+                        toast.error('Không thể lưu nội dung trước khi ký.');
+                        return;
+                    }
+                }
+
+                // 2. Luôn lấy dữ liệu mới nhất từ BE để tính hash chính xác
+                const latestRecord = await queryClient.fetchQuery({
+                    queryKey: ['medical-record', id],
+                    queryFn: () => medicalService.getDetail(id!)
+                });
+
+                if (!latestRecord) {
+                    toast.error('Không thể lấy dữ liệu mới nhất để ký số.');
+                    return;
+                }
+
+                // 3. Tính toán mã băm (Hash) của hồ sơ
+                const latestVitals = latestRecord.vitalSigns ? {
+                    ...latestRecord.vitalSigns,
+                    bloodPressure: latestRecord.vitalSigns.bloodPressure || ""
+                } : null;
+
+                // Tính mã Hash SHA-256
+                const hashHex = await computeRecordHash(
+                    latestRecord as any,
+                    (latestRecord.prescriptions || []) as any[],
+                    latestVitals as any
+                );
+
+                // 4. Thực hiện ký với mã băm đã tính
+                signMutation.mutate({ 
+                    signature: "MVP_DOCTOR_SIGNATURE", 
+                    contentHash: hashHex 
+                });
+            } catch (err) {
+                console.error('Signing error:', err);
+                toast.error('Lỗi khi chuẩn bị dữ liệu ký số');
+            }
         }
     };
 
@@ -320,11 +381,6 @@ export default function MedicalRecordDetailPage() {
         setIsPrintingRecord(true);
         try {
             let url = record?.pdfUrl;
-            if (!url) {
-                const res = await medicalService.generateMedicalRecordPdf(id);
-                url = res.pdfUrl;
-                queryClient.invalidateQueries({ queryKey: ['medical-record', id] });
-            }
             
             if (url) {
                 await printPdfFromUrl(url);
@@ -405,7 +461,7 @@ export default function MedicalRecordDetailPage() {
     }
 
     const isTogglePending = completeRecordMutation.isPending || reopenRecordMutation.isPending;
-    const isFormDisabled = isRecordClosed || updateMutation.isPending || isTogglePending;
+    const isFormDisabled = isRecordClosed || record.signedStatus === 'SIGNED' || updateMutation.isPending || isTogglePending;
 
     return (
         <div className="h-full overflow-hidden flex flex-col bg-gray-50">
@@ -647,7 +703,7 @@ export default function MedicalRecordDetailPage() {
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-700 mb-1">SpO2 (%)</label>
-                                                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm">{record.vitalSigns.spo2 || record.vitalSigns.spO2 || '--'}</div>
+                                                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm">{record.vitalSigns.spo2 || '--'}</div>
                                             </div>
                                         </div>
                                     </section>
@@ -1090,7 +1146,12 @@ export default function MedicalRecordDetailPage() {
                                             variant="ghost"
                                             className="flex items-center gap-3 cursor-pointer hover:bg-transparent p-0"
                                             onClick={handleSign}
-                                            disabled={record.signedStatus === 'SIGNED' || signMutation.isPending}
+                                            disabled={
+                                                record.signedStatus === 'SIGNED' || 
+                                                signMutation.isPending || 
+                                                record.status !== MedicalRecordStatusEnum.COMPLETED ||
+                                                currentUser?.doctorId !== record.doctor.id
+                                            }
                                         >
                                             <span className="text-sm font-medium text-gray-700">Ký số</span>
                                             <div className="relative">
@@ -1145,7 +1206,13 @@ export default function MedicalRecordDetailPage() {
 
                     {/* Right Column */}
                     <ResizablePanel defaultSize={50} minSize={30} className="!overflow-hidden bg-white rounded-lg shadow-sm border border-gray-200">
-                        {activeTab === 'prescription' && selectedPrescription ? (
+                        {activeTab === 'medical-record' && record?.pdfUrl && record?.signedStatus === 'SIGNED' ? (
+                            <iframe
+                                src={record.pdfUrl}
+                                className="w-full h-full block border-0"
+                                title="Medical Record PDF Preview"
+                            />
+                        ) : activeTab === 'prescription' && selectedPrescription ? (
                             selectedPrescription.pdfUrl ? (
                                 <iframe
                                     src={selectedPrescription.pdfUrl}
