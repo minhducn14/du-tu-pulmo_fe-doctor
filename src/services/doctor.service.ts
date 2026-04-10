@@ -19,8 +19,8 @@ export const doctorService = {
   },
 
   getPublicDoctors: async (params?: any): Promise<{ items: DoctorProfile[]; meta: any }> => {
-    const response = await api.get<{ data: { items: DoctorProfile[]; meta: any } }>('/public/doctors', { params });
-    return response.data.data;
+    const response = await api.get<{ items: DoctorProfile[]; meta: any }>('/public/doctors', { params });
+    return response.data;
   },
 };
 

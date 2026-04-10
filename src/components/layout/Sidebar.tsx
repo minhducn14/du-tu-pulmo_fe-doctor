@@ -120,12 +120,12 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             icon: ScheduleIcon,
             allowedRoles: ['DOCTOR'],
         },
-        {
-            name: 'Khung Giờ Khám',
-            href: '/doctor/time-slots',
-            icon: TimeSlotIcon,
-            allowedRoles: ['DOCTOR'],
-        },
+        // {
+        //     name: 'Khung Giờ Khám',
+        //     href: '/doctor/time-slots',
+        //     icon: TimeSlotIcon,
+        //     allowedRoles: ['DOCTOR'],
+        // },
     ];
 
     // 4. HỒ SƠ & BỆNH NHÂN (Records)
