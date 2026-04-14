@@ -114,6 +114,8 @@ export default function MedicalRecordDetailPage() {
         isDigitallySigned: false,
     });
 
+    const isInitializedRef = useRef(false);
+
     useEffect(() => {
         if (record && !isInitializedRef.current) {
             setFormData(prev => ({
