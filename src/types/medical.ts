@@ -91,6 +91,11 @@ export interface MedicalRecordAddendum {
   createdAt: string | Date;
 }
 
+export interface CreateAddendumDto {
+  reason: string;
+  content: string;
+}
+
 export interface LinkRecordInfo {
   id: string;
   recordNumber: string;
@@ -474,6 +479,9 @@ export interface MedicalRecordDetailResponse {
   
   // Screening Requests (full structure)
   screeningRequests?: ScreeningRequestResponseDto[];
+  
+  // Addenda
+  addenda?: MedicalRecordAddendum[];
 }
 
 

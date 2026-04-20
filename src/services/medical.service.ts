@@ -11,6 +11,8 @@ import type {
   UpdateMedicalRecordDto,
   VitalSign,
   CreateVitalSignDto,
+  CreateAddendumDto,
+  MedicalRecordAddendum,
 } from "@/types/medical";
 import type { UploadAnalyzeResponse } from "@/types/screening";
 import screeningService from "@/services/screening.service";
@@ -272,6 +274,21 @@ export const medicalService = {
   ): Promise<MedicalRecordDetailResponse> => {
     const response = await api.post<MedicalRecordDetailResponse>(
       `/medical/records/${recordId}/sign`,
+      dto,
+    );
+    return response.data;
+  },
+
+  /**
+   * Create an addendum for a signed medical record
+   * @roles DOCTOR (own)
+   */
+  createAddendum: async (
+    recordId: string,
+    dto: CreateAddendumDto,
+  ): Promise<MedicalRecordAddendum> => {
+    const response = await api.post<MedicalRecordAddendum>(
+      `/medical/records/${recordId}/addendum`,
       dto,
     );
     return response.data;
