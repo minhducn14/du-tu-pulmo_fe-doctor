@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ const screeningTypeLabel: Record<ScreeningType, string> = {
 };
 
 export const AiXrayPage = () => {
+  const navigate = useNavigate();
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const { data: uploaded } = useUploadedScreenings({ page: 1, limit: 10 });
 
@@ -123,7 +124,8 @@ export const AiXrayPage = () => {
                 {(uploaded?.items || []).map((s) => (
                   <div 
                     key={s.id} 
-                    className="group relative rounded-xl border border-slate-100 p-4 bg-white hover:border-blue-200 hover:shadow-md transition-all cursor-default"
+                    className="group relative rounded-xl border border-slate-100 p-4 bg-white hover:border-blue-200 hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => navigate(`/doctor/screenings/${s.id}`)}
                   >
                     <div className="flex flex-col gap-2">
                       <div className="flex items-start justify-between">

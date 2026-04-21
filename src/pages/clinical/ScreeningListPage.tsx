@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,6 +63,7 @@ const priorityColor: Record<ScreeningPriority, string> = {
 };
 
 export default function ScreeningListPage() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [patientId, setPatientId] = useState('');
   const [status, setStatus] = useState<string>('all');
@@ -202,7 +203,11 @@ export default function ScreeningListPage() {
                   </TableRow>
                 ))
               ) : (data?.items || []).map((item) => (
-                <TableRow key={item.id} className="group border-slate-50 hover:bg-blue-50/30 transition-colors">
+                <TableRow 
+                  key={item.id} 
+                  className="group border-slate-50 hover:bg-blue-50/30 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/doctor/screenings/${item.id}`)}
+                >
                   <TableCell className="pl-6 font-mono text-[13px] font-bold text-blue-600 italic">
                     {item.screeningNumber}
                   </TableCell>
