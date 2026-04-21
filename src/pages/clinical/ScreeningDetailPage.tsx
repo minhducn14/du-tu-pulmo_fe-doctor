@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,11 +23,11 @@ import {
 } from '@/hooks/use-screenings';
 import AiAnalysisResult from '@/components/screening/AiAnalysisResult';
 import type { DecisionSource } from '@/types/screening';
-import { 
-  ChevronLeft, 
-  BrainCircuit, 
-  User, 
-  Stethoscope, 
+import {
+  ChevronLeft,
+  BrainCircuit,
+  User,
+  Stethoscope,
   ImageIcon,
   Search,
   CheckCircle2,
@@ -120,19 +121,19 @@ export default function ScreeningDetailPage() {
         <div className="lg:col-span-2 space-y-8">
           {/* Main Visual Content */}
           <Card className="border-none shadow-md bg-slate-900 overflow-hidden">
-             <CardHeader className="bg-slate-800/50 border-b border-slate-700/50 py-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-slate-200">
-                        <ImageIcon className="h-4 w-4 text-blue-400" />
-                        <span className="text-sm font-bold uppercase tracking-widest">Phát hiện từ hình ảnh</span>
-                    </div>
-                    {latestAnalysis && (
-                        <Badge className="bg-blue-600/20 text-blue-400 border-blue-400/30">
-                            AI Confidence: {(latestAnalysis.primaryDiagnosis?.probability || 0) * 100}%
-                        </Badge>
-                    )}
+            <CardHeader className="bg-slate-800/50 border-b border-slate-700/50 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-slate-200">
+                  <ImageIcon className="h-4 w-4 text-blue-400" />
+                  <span className="text-sm font-bold uppercase tracking-widest">Phát hiện từ hình ảnh</span>
                 </div>
-             </CardHeader>
+                {latestAnalysis && (
+                  <Badge className="bg-blue-600/20 text-blue-400 border-blue-400/30">
+                    AI Confidence: {(latestAnalysis.primaryDiagnosis?.probability || 0) * 100}%
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
             <CardContent className="p-0 bg-black min-h-[400px] flex items-center justify-center relative group">
               {latestAnalysis?.evaluatedImageUrl ? (
                 <img
@@ -148,15 +149,15 @@ export default function ScreeningDetailPage() {
                 />
               ) : (
                 <div className="flex flex-col items-center gap-2 text-slate-500 py-20">
-                    <ImageIcon className="h-12 w-12 opacity-20" />
-                    <p>Không có hình ảnh chẩn đoán</p>
+                  <ImageIcon className="h-12 w-12 opacity-20" />
+                  <p>Không có hình ảnh chẩn đoán</p>
                 </div>
               )}
-              
+
               <div className="absolute bottom-4 right-4 flex gap-2">
-                 <Button size="sm" variant="secondary" className="bg-slate-800/80 text-white border-slate-700 hover:bg-slate-700 backdrop-blur-sm">
-                    <Search className="h-4 w-4 mr-1.5" /> Phóng to
-                 </Button>
+                <Button size="sm" variant="secondary" className="bg-slate-800/80 text-white border-slate-700 hover:bg-slate-700 backdrop-blur-sm">
+                  <Search className="h-4 w-4 mr-1.5" /> Phóng to
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -174,8 +175,8 @@ export default function ScreeningDetailPage() {
                 <AiAnalysisResult analysis={latestAnalysis} />
               ) : (
                 <div className="text-center py-10 space-y-3">
-                    <AlertCircle className="h-10 w-10 text-slate-200 mx-auto" />
-                    <p className="text-sm text-slate-400">Chưa có kết quả phân tích AI cho ca này.</p>
+                  <AlertCircle className="h-10 w-10 text-slate-200 mx-auto" />
+                  <p className="text-sm text-slate-400">Chưa có kết quả phân tích AI cho ca này.</p>
                 </div>
               )}
             </CardContent>
@@ -197,23 +198,26 @@ export default function ScreeningDetailPage() {
                 {decisionSource !== 'DOCTOR_ONLY' && (
                   <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
                     <Label className="text-xs font-bold text-slate-500 uppercase">Đồng ý kết quả AI?</Label>
-                    <Select 
-                      value={agreesWithAi} 
+                    <Select
+                      value={agreesWithAi}
                       onValueChange={setAgreesWithAi}
                       disabled={decisionSource === 'AI_ONLY'}
                     >
-                      <SelectTrigger className="w-full h-11 bg-slate-50 border-slate-200">
+                      <SelectTrigger className={cn(
+                        "w-full h-11 bg-slate-50 border-slate-200",
+                        agreesWithAi === 'true' ? 'text-emerald-600' : 'text-red-600'
+                      )}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="true" className="text-emerald-600 font-medium">
+                        <SelectItem value="true" className="text-emerald-600 font-medium focus:text-emerald-600">
                           <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-4 w-4" /> Đồng ý
+                            <CheckCircle2 className="h-4 w-4" /> Đồng ý
                           </div>
                         </SelectItem>
-                        <SelectItem value="false" className="text-red-600 font-medium">
+                        <SelectItem value="false" className="text-red-600 font-medium focus:text-red-600">
                           <div className="flex items-center gap-2">
-                              <XCircle className="h-4 w-4" /> Bác sĩ bác bỏ/điều chỉnh
+                            <XCircle className="h-4 w-4" /> Bác sĩ bác bỏ/điều chỉnh
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -223,8 +227,8 @@ export default function ScreeningDetailPage() {
 
                 <div className="space-y-2">
                   <Label className="text-xs font-bold text-slate-500 uppercase">Nguồn quyết định</Label>
-                  <Select 
-                    value={decisionSource} 
+                  <Select
+                    value={decisionSource}
                     onValueChange={(val) => {
                       setDecisionSource(val as DecisionSource);
                       if (val === 'AI_ONLY') setAgreesWithAi('true');
@@ -276,8 +280,8 @@ export default function ScreeningDetailPage() {
               {/* Conclusion History */}
               <div className="pt-6 border-t border-slate-100">
                 <div className="flex items-center gap-2 mb-4">
-                    <Clock className="h-4 w-4 text-slate-400" />
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Lịch sử kết luận</h4>
+                  <Clock className="h-4 w-4 text-slate-400" />
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Lịch sử kết luận</h4>
                 </div>
                 <div className="space-y-4 max-h-[300px] overflow-auto pr-2 custom-scrollbar">
                   {conclusions?.map((c) => (
@@ -295,8 +299,8 @@ export default function ScreeningDetailPage() {
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-600 line-clamp-2">
-                           {c.decisionSource === 'DOCTOR_ONLY' 
-                            ? 'Chẩn đoán độc lập' 
+                          {c.decisionSource === 'DOCTOR_ONLY'
+                            ? 'Chẩn đoán độc lập'
                             : c.agreesWithAi ? 'Đồng ý với AI' : 'Điều chỉnh kết quả AI'}
                         </p>
                         {c.doctorOverrideReason && (
