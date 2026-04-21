@@ -96,7 +96,9 @@ export interface ScreeningConclusionResponse {
   decisionSource?: DecisionSource;
   doctorOverrideReason?: string;
   doctorNotes?: string;
+  conclusion?: string;
   reviewedAt: string;
+
   createdAt: string;
   updatedAt: string;
   doctor: DoctorProfile
@@ -155,4 +157,6 @@ export interface CreateConclusionDto {
   decisionSource: DecisionSource;
   doctorOverrideReason?: string;
   doctorNotes?: string;
+  conclusion?: string;
 }
+
