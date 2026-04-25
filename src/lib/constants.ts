@@ -8,7 +8,7 @@ export const AI_API_URL =
 
 // Socket URL - for real-time updates
 export const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+  import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 // Auth
 export const TOKEN_KEY = "auth_token";
