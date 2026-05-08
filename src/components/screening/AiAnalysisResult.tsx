@@ -22,6 +22,24 @@ export default function AiAnalysisResult({ analysis }: Props) {
         ? riskColorMap[primary.risk_level]
         : 'bg-blue-100 border-blue-400 text-blue-700';
 
+    if (analysis.diagnosisStatus === 'ERROR') {
+        return (
+            <div className="border rounded-lg p-5 shadow-sm space-y-4 bg-red-50 border-red-200">
+                <div className="flex items-start gap-3">
+                    <div className="p-2 bg-red-100 rounded-full text-red-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-red-800">Lỗi phân tích AI</h3>
+                        <p className="text-sm text-red-600 mt-1">
+                            {analysis.errorMessage || 'Đã xảy ra lỗi trong quá trình phân tích hình ảnh.'}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="border rounded-lg p-5 shadow-sm space-y-4">
 

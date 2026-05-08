@@ -149,7 +149,7 @@ export default function ScreeningDetailPage() {
                         <ImageIcon className="h-4 w-4 text-blue-400" />
                         <span className="text-sm font-bold uppercase tracking-widest">Phát hiện từ hình ảnh</span>
                     </div>
-                    {latestAnalysis && (
+                    {latestAnalysis && latestAnalysis.diagnosisStatus !== 'ERROR' && (
                         <Badge className="bg-blue-600/20 text-blue-400 border-blue-400/30">
                             AI Confidence: {(latestAnalysis.primaryDiagnosis?.probability || 0) * 100}%
                         </Badge>

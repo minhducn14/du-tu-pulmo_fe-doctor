@@ -129,7 +129,10 @@ export function AIXraySection({
             <Card>
               <CardHeader>
                 <CardTitle>
-                  Kết quả AI · {result.analysis.totalFindings || 0} phát hiện
+                  {result.analysis.diagnosisStatus === 'ERROR' 
+                    ? 'Lỗi phân tích AI'
+                    : `Kết quả AI · ${result.analysis.totalFindings || 0} phát hiện`
+                  }
                 </CardTitle>
               </CardHeader>
 
@@ -137,11 +140,13 @@ export function AIXraySection({
                 <AiAnalysisResult analysis={result.analysis} />
               </CardContent>
 
-              <CardContent>
-                <div className="rounded-md border p-2 bg-black/90">
-                  <img src={result.analysis.evaluatedImageUrl} alt="xray" className="max-h-[360px] mx-auto object-contain" />
-                </div>
-              </CardContent>
+              {result.analysis.diagnosisStatus !== 'ERROR' && result.analysis.evaluatedImageUrl && (
+                <CardContent>
+                  <div className="rounded-md border p-2 bg-black/90">
+                    <img src={result.analysis.evaluatedImageUrl} alt="xray" className="max-h-[360px] mx-auto object-contain" />
+                  </div>
+                </CardContent>
+              )}
             </Card>
           )}
         </div>

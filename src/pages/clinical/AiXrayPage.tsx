@@ -49,7 +49,7 @@ export const AiXrayPage = () => {
             <span>AI Chẩn đoán Hình ảnh</span>
           </div>
         }
-        subtitle="Phân tích X-quang phổi bằng trí tuệ nhân tạo (du-tu-pulmo AI)"
+        subtitle="Phân tích X-quang phổi bằng trí tuệ nhân tạo"
         rightSlot={
           <Button asChild variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50">
             <Link to="/doctor/screenings" className="flex items-center gap-2">
