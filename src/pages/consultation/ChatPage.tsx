@@ -183,9 +183,9 @@ export const ChatPage = () => {
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <Card className="h-[calc(100vh-220px)] min-h-[560px]">
-          <CardHeader className="space-y-3">
-            <CardTitle className="text-base">Cuộc trò chuyện</CardTitle>
+        <Card className="h-[calc(100vh-220px)] min-h-[560px] flex flex-col overflow-hidden">
+          <CardHeader className="space-y-3 px-4 py-4 flex-shrink-0">
+            <CardTitle className="text-base font-bold">Cuộc trò chuyện</CardTitle>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
@@ -229,9 +229,9 @@ export const ChatPage = () => {
               </div>
             )}
           </CardHeader>
-          <CardContent className="h-[calc(100%-170px)] pt-0">
-            <ScrollArea className="h-full pr-2">
-              <div className="space-y-2">
+          <CardContent className="flex-1 min-h-0 p-0">
+            <ScrollArea className="h-full">
+              <div className="space-y-2 px-4 pb-4">
                 {isLoadingRooms &&
                   Array.from({ length: 6 }).map((_, index) => (
                     <Skeleton key={index} className="h-14 w-full rounded-md" />
@@ -255,26 +255,28 @@ export const ChatPage = () => {
                         key={room.id}
                         onClick={() => setSelectedRoomId(room.id)}
                         className={cn(
-                          'flex w-full items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors',
+                          'flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2 text-left transition-all',
                           isActive
-                            ? 'border-blue-200 bg-blue-50'
+                            ? 'border-blue-200 bg-blue-50 ring-1 ring-blue-100'
                             : 'border-transparent hover:border-gray-200 hover:bg-gray-50',
                         )}
                       >
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback>{getDisplayInitial(participant.fullName)}</AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-gray-900">
-                            {participant.fullName || 'Không rõ tên'}
-                          </p>
-                          <p className="truncate text-xs text-gray-500">{participant.email || ' '}</p>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar className="h-10 w-10 flex-shrink-0">
+                            <AvatarFallback>{getDisplayInitial(participant.fullName)}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className={cn("truncate text-sm font-semibold", isActive ? "text-blue-700" : "text-gray-900")}>
+                              {participant.fullName || 'Không rõ tên'}
+                            </p>
+                            <p className="truncate text-xs text-gray-500">{participant.email || ' '}</p>
+                          </div>
                         </div>
                         <Badge
                           variant="secondary"
                           className={cn(
-                            'text-[10px]',
-                            isOnline ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600',
+                            'text-[10px] flex-shrink-0',
+                            isOnline ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-600',
                           )}
                         >
                           {isOnline ? 'Online' : 'Offline'}

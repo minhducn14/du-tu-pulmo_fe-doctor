@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { useAppStore } from '@/store/useAppStore';
 import { useFcmToken } from '@/hooks/use-fcm-token';
+import { SocketHandler } from '@/components/chat/SocketHandler';
 
 export function DashboardLayout() {
     const { sidebarCollapsed, user } = useAppStore();
@@ -9,6 +10,7 @@ export function DashboardLayout() {
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
+            <SocketHandler />
             <Sidebar collapsed={sidebarCollapsed} />
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <main className="flex-1 flex flex-col relative overflow-y-auto">
